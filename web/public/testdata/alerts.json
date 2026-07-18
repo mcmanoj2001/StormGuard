@@ -1,0 +1,32 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "alerts": [
+    {
+      "id": "test-flash-flood-emergency-1",
+      "event": "Flash Flood Emergency",
+      "severity": "extreme",
+      "urgency": "Immediate",
+      "headline": "Flash Flood Emergency for Denham Springs and Watson",
+      "description": "A Flash Flood Emergency is in effect for the Amite River basin. 20+ inches of rain have fallen in 48 hours. The river is forecast to crest at 46.2 feet, more than 5 feet above the record.",
+      "instruction": "This is a life-threatening situation. Move to higher ground immediately. Do not attempt to travel unless fleeing an area subject to flooding.",
+      "areaDesc": "Livingston; East Baton Rouge",
+      "onset": "2026-07-18T06:00:00Z",
+      "expires": "2026-07-19T18:00:00Z",
+      "geometry": { "type": "Polygon", "coordinates": [[[-91.15, 30.35], [-90.65, 30.35], [-90.65, 30.65], [-91.15, 30.65], [-91.15, 30.35]]] }
+    },
+    {
+      "id": "test-flood-warning-1",
+      "event": "Flood Warning",
+      "severity": "severe",
+      "urgency": "Expected",
+      "headline": "Flood Warning for the Tickfaw River at Holden",
+      "description": "The Tickfaw River is above flood stage and will remain elevated through the weekend, inundating low-lying areas near the river.",
+      "instruction": "Move to higher ground. Do not drive through flooded roadways. Turn around, don't drown.",
+      "areaDesc": "Livingston; Tangipahoa",
+      "onset": "2026-07-18T09:00:00Z",
+      "expires": "2026-07-20T00:00:00Z",
+      "geometry": { "type": "Polygon", "coordinates": [[[-90.75, 30.4], [-90.55, 30.4], [-90.55, 30.6], [-90.75, 30.6], [-90.75, 30.4]]] }
+    }
+  ]
+}

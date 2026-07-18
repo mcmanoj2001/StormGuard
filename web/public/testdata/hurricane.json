@@ -1,0 +1,24 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "storms": [
+    {
+      "id": "AL042026",
+      "name": "Hurricane Delta",
+      "category": 3,
+      "maxWindsMph": 120,
+      "movement": "NNW at 12 mph",
+      "position": { "lat": 27.8, "lon": -90.6 },
+      "nearAoi": true,
+      "expectedInlandRainIn": "15-20 inches over the Amite and Comite basins within 48 h of landfall",
+      "track": {
+        "type": "LineString",
+        "coordinates": [[-88.9, 25.1], [-89.8, 26.4], [-90.6, 27.8], [-91.1, 29.2], [-91.4, 30.6], [-91.6, 32.0]]
+      },
+      "cone": {
+        "type": "Polygon",
+        "coordinates": [[[-89.4, 26.0], [-90.0, 27.8], [-90.2, 29.2], [-90.4, 30.6], [-90.5, 32.0], [-92.7, 32.0], [-92.4, 30.6], [-92.0, 29.2], [-91.4, 27.8], [-90.4, 26.0], [-89.4, 26.0]]]
+      }
+    }
+  ]
+}

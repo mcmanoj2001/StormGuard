@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>StormGuard — Flood Situational Awareness</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>⛈ StormGuard</h1>
+      <div class="topbar-status" id="status-badge">Connecting…</div>
+      <label class="test-toggle">
+        <input type="checkbox" id="test-mode-toggle" />
+        <span>Test scenario</span>
+      </label>
+    </header>
+
+    <main class="layout">
+      <div id="map" aria-label="Situational awareness map"></div>
+
+      <!-- Side panel on desktop/tablet, bottom sheet on phones (CSS-driven) -->
+      <aside class="panel" id="panel">
+        <nav class="panel-tabs" role="tablist">
+          <button data-tab="actions" class="active">Actions</button>
+          <button data-tab="gauge">Gauge</button>
+          <button data-tab="population">Population</button>
+        </nav>
+        <section id="tab-actions" class="tab active"></section>
+        <section id="tab-gauge" class="tab"></section>
+        <section id="tab-population" class="tab"></section>
+      </aside>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

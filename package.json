@@ -1,0 +1,17 @@
+{
+  "name": "stormguard",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Browser-only riverine-flood situational awareness SPA (IEEE Response Quest Challenge 2026)",
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "preview": "npm run preview -w web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

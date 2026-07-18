@@ -1,0 +1,11 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "gauges": [
+    { "id": "07380120", "name": "Amite River near Denham Springs, LA", "lat": 30.4641, "lon": -90.9901, "stage_ft": 32.4, "discharge_cfs": 98500, "rate_ft_per_hr": 0.6, "trend": "rising", "time": "2026-07-18T11:45:00Z", "severity": "major" },
+    { "id": "07378500", "name": "Comite River near Comite, LA", "lat": 30.5322, "lon": -91.1179, "stage_ft": 26.8, "discharge_cfs": 32400, "rate_ft_per_hr": 0.4, "trend": "rising", "time": "2026-07-18T11:45:00Z", "severity": "moderate" },
+    { "id": "07376000", "name": "Tickfaw River at Holden, LA", "lat": 30.5013, "lon": -90.6737, "stage_ft": 21.9, "discharge_cfs": 18700, "rate_ft_per_hr": -0.2, "trend": "falling", "time": "2026-07-18T11:45:00Z", "severity": "moderate" },
+    { "id": "07386980", "name": "Vermilion River at Lafayette, LA", "lat": 30.2241, "lon": -92.0198, "stage_ft": 14.1, "discharge_cfs": 9800, "rate_ft_per_hr": 0.1, "trend": "steady", "time": "2026-07-18T11:45:00Z", "severity": "minor" },
+    { "id": "07381600", "name": "Atchafalaya River at Morgan City, LA", "lat": 29.6927, "lon": -91.2115, "stage_ft": 6.2, "discharge_cfs": 289000, "rate_ft_per_hr": 0.0, "trend": "steady", "time": "2026-07-18T11:45:00Z", "severity": "normal" }
+  ]
+}

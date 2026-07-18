@@ -1,0 +1,11 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "tracts": [
+    { "geoid": "22063040800", "county": "Livingston Parish", "lat": 30.47, "lon": -90.96, "population": 7930 },
+    { "geoid": "22063040400", "county": "Livingston Parish", "lat": 30.55, "lon": -90.85, "population": 6420 },
+    { "geoid": "22033003500", "county": "East Baton Rouge Parish", "lat": 30.41, "lon": -91.09, "population": 5680 },
+    { "geoid": "22105955300", "county": "Tangipahoa Parish", "lat": 30.52, "lon": -90.62, "population": 4310 },
+    { "geoid": "22055001300", "county": "Lafayette Parish", "lat": 30.22, "lon": -92.02, "population": 5140 }
+  ]
+}
