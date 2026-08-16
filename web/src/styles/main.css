@@ -40,6 +40,58 @@ body {
 .topbar-status.error { color: #ff6b6b; }
 .test-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; cursor: pointer; }
 
+.about-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  color: #fff;
+  background: none;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  min-height: 32px;
+  cursor: pointer;
+}
+.about-btn:hover { background: rgb(255 255 255 / 0.1); }
+
+dialog#about-modal {
+  max-width: 560px;
+  width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  margin: auto; /* the global `* { margin: 0 }` reset would otherwise kill
+                   the browser's default dialog centering */
+  border: none;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+}
+dialog#about-modal::backdrop { background: rgb(0 0 0 / 0.45); }
+dialog#about-modal h2 { margin-bottom: 0.5rem; }
+dialog#about-modal h3 { margin: 1rem 0 0.4rem; font-size: 1rem; }
+dialog#about-modal p { font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.4rem; }
+
+.about-table-wrap { overflow-x: auto; max-width: 100%; }
+.about-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 0.8rem; }
+.about-table th, .about-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid #eee; }
+.about-table th { color: #666; font-weight: 600; }
+
+.legend { list-style: none; font-size: 0.85rem; }
+.legend li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.legend .swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+.about-actions { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
+.about-actions button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+.about-actions button.primary { background: var(--c-normal); color: #fff; border-color: var(--c-normal); }
+
 .layout {
   flex: 1;
   display: grid;
@@ -114,6 +166,9 @@ body {
 dl { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.8rem; font-size: 0.9rem; }
 dt { color: #666; }
 dd { font-weight: 600; }
+
+.leaflet-tooltip.insight-tip { font-size: 0.8rem; max-width: 220px; white-space: normal; line-height: 1.4; }
+.leaflet-tooltip.insight-tip .tip-instruction { font-weight: 600; }
 
 /* Tablet: narrower panel */
 @media (max-width: 1024px) {

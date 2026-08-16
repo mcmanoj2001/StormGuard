@@ -7,6 +7,7 @@
 // evacuate / prepare / monitor recommendations.
 
 import { getState, subscribe } from '../state.js';
+import { gaugeInsight } from '../insight.js';
 
 const el = () => document.getElementById('tab-actions');
 
@@ -61,11 +62,7 @@ function render() {
       <article class="card severity-${g.severity === 'major' || rising ? 'extreme' : 'severe'}">
         <h3>River at ${g.severity} flood level${rising ? ' — RISING' : ''}</h3>
         <p>${g.name} — stage ${g.stage_ft} ft${rate}.</p>
-        <p class="instruction">▶ ${
-          rising
-            ? 'Pre-stage high-water assets now; conditions worsening on this reach.'
-            : 'Verify road closures and monitor for renewed rise on this reach.'
-        }</p>
+        <p class="instruction">▶ ${gaugeInsight(g)}</p>
       </article>`);
   }
 

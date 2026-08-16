@@ -8,6 +8,7 @@ import { initMap } from './map/map.js';
 import { initGaugePanel } from './panels/gaugePanel.js';
 import { initActionPanel } from './panels/actionPanel.js';
 import { initPopulationPanel } from './panels/populationPanel.js';
+import { initAboutPanel } from './panels/aboutPanel.js';
 
 const POLL_MS = 60_000;
 
@@ -15,6 +16,7 @@ initMap();
 initGaugePanel();
 initActionPanel();
 initPopulationPanel();
+initAboutPanel();
 wireTabs();
 wireTestToggle();
 refresh();

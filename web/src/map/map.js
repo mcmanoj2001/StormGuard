@@ -5,6 +5,7 @@
 import L from 'leaflet';
 import { setState, subscribe } from '../state.js';
 import { overlayConfig } from '../data/layers.js';
+import { gaugeInsight } from '../insight.js';
 
 export const SEVERITY_COLORS = {
   extreme: '#b30000',
@@ -74,8 +75,12 @@ function renderGauges({ gauges }) {
     })
       .on('click', () => setState({ selectedGaugeId: g.id }))
       .bindTooltip(
-        `${g.name}<br>Stage: ${g.stage_ft ?? '—'} ft ${trend}` +
-          (g.rate_ft_per_hr != null ? ` (${g.rate_ft_per_hr > 0 ? '+' : ''}${g.rate_ft_per_hr} ft/hr)` : '')
+        `<strong>${g.name}</strong><br>` +
+          `Stage: ${g.stage_ft ?? '—'} ft ${trend}` +
+          (g.rate_ft_per_hr != null ? ` (${g.rate_ft_per_hr > 0 ? '+' : ''}${g.rate_ft_per_hr} ft/hr)` : '') +
+          ` — ${g.severity.toUpperCase()}<br>` +
+          `<span class="tip-instruction">▶ ${gaugeInsight(g)}</span>`,
+        { className: 'insight-tip' }
       )
       .addTo(gaugeLayer);
   }
@@ -123,7 +128,11 @@ function renderAlerts({ alerts }) {
         fillOpacity: 0.15,
       },
     })
-      .bindPopup(`<strong>${a.event}</strong><br>${a.headline ?? ''}`)
+      .bindTooltip(`<strong>${a.event}</strong><br>${a.headline ?? ''}`, { className: 'insight-tip' })
+      .bindPopup(
+        `<strong>${a.event}</strong><br>${a.headline ?? ''}` +
+          (a.instruction ? `<br><span class="tip-instruction">▶ ${a.instruction}</span>` : '')
+      )
       .addTo(alertLayer);
   }
 }

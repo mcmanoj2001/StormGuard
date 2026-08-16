@@ -15,6 +15,7 @@
         <input type="checkbox" id="test-mode-toggle" />
         <span>Test scenario</span>
       </label>
+      <button id="about-btn" class="about-btn" aria-haspopup="dialog">ⓘ About</button>
     </header>
 
     <main class="layout">
@@ -32,6 +33,63 @@
         <section id="tab-population" class="tab"></section>
       </aside>
     </main>
+
+    <dialog id="about-modal" aria-labelledby="about-title">
+      <h2 id="about-title">⛈ StormGuard</h2>
+      <p>
+        A zero-training situational awareness tool for emergency responders
+        facing inland flooding. It answers three questions in under 10
+        seconds: <strong>Where is flooding? How bad? Getting worse?</strong>
+      </p>
+
+      <h3>How it works</h3>
+      <p>
+        Every API call is made directly from this browser to free federal
+        endpoints — no backend, no database, no hosting cost. Readings are
+        synthesized into one color-coded map plus a plain-language action
+        panel, so a responder never has to interpret raw numbers.
+      </p>
+
+      <h3>Data sources</h3>
+      <div class="about-table-wrap">
+      <table class="about-table">
+        <thead>
+          <tr><th>Source</th><th>Category</th><th>Refresh</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>USGS Instantaneous Values (waterservices.usgs.gov)</td><td>Hydrology</td><td>5 min</td><td>✅ Live</td></tr>
+          <tr><td>NWS Active Alerts (api.weather.gov)</td><td>Weather</td><td>60 s</td><td>✅ Live</td></tr>
+          <tr><td>NHC forecast track/cone (ArcGIS REST)</td><td>Hurricane (upstream signal)</td><td>10 min</td><td>✅ Live</td></tr>
+          <tr><td>NEXRAD radar tiles (Iowa Mesonet)</td><td>Weather</td><td>Live tiles</td><td>✅ Live</td></tr>
+          <tr><td>FEMA NFHL flood zones (WMS)</td><td>Infrastructure</td><td>Static</td><td>🚧 Layer unconfirmed</td></tr>
+          <tr><td>NWS AHPS/NWPS forecast crest</td><td>Hydrology</td><td>6 h</td><td>🚧 Not started</td></tr>
+          <tr><td>Census ACS 5-yr population</td><td>Population</td><td>Annual</td><td>🚧 Stub (test mode only)</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Known limitations</h3>
+      <p>
+        No official federal real-time power-outage API exists — this is a
+        documented data gap, not an oversight. Census population impact and
+        the FEMA flood-zone overlay are not yet wired to live data; enable
+        Test Scenario to see the intended experience with fixture data.
+      </p>
+
+      <h3>Map legend</h3>
+      <ul class="legend">
+        <li><span class="swatch" style="background:#b30000"></span> Major flood stage</li>
+        <li><span class="swatch" style="background:#fc8d59"></span> Moderate flood stage</li>
+        <li><span class="swatch" style="background:#fdcc8a"></span> Minor flood stage</li>
+        <li><span class="swatch" style="background:#2b8cbe"></span> Normal range</li>
+        <li><span class="swatch" style="background:#999999"></span> No reading available</li>
+      </ul>
+
+      <div class="about-actions">
+        <button id="about-demo-btn" class="primary">▶ See it in action</button>
+        <button id="about-close-btn">Close</button>
+      </div>
+    </dialog>
 
     <script type="module" src="/src/main.js"></script>
   </body>
