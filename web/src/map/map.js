@@ -19,6 +19,35 @@ export const SEVERITY_COLORS = {
 
 const TREND_ARROWS = { rising: '▲', falling: '▼', steady: '►', unknown: '' };
 
+// FEMA's NFHL MapServer doesn't have its WMS interface enabled (confirmed:
+// every WMSServer request 400s regardless of parameters) — this renders the
+// same layers through the standard ArcGIS REST `export` operation instead,
+// which the service does support. One `export` call per tile, matching the
+// bbox Leaflet would otherwise have sent to a WMS GetMap request.
+const ArcGISDynamicLayer = L.TileLayer.extend({
+  getTileUrl(coords) {
+    const tileSize = this.getTileSize();
+    const nwPoint = coords.scaleBy(tileSize);
+    const sePoint = nwPoint.add(tileSize);
+    const nw = this._map.unproject(nwPoint, coords.z);
+    const se = this._map.unproject(sePoint, coords.z);
+    const merc = L.CRS.EPSG3857;
+    const nwMerc = merc.project(nw);
+    const seMerc = merc.project(se);
+    const params = new URLSearchParams({
+      bbox: [nwMerc.x, seMerc.y, seMerc.x, nwMerc.y].join(','),
+      bboxSR: 3857,
+      imageSR: 3857,
+      size: `${tileSize.x},${tileSize.y}`,
+      layers: `show:${this.options.layerIds}`,
+      format: this.options.format ?? 'png32',
+      transparent: this.options.transparent ?? true,
+      f: 'image',
+    });
+    return `${this.options.url}/export?${params}`;
+  },
+});
+
 let map;
 const gaugeLayer = L.layerGroup();
 const alertLayer = L.layerGroup();
@@ -41,7 +70,10 @@ export function initMap() {
     overlayConfig.radar.type === 'wms'
       ? L.tileLayer.wms(overlayConfig.radar.url, overlayConfig.radar.options)
       : L.tileLayer(overlayConfig.radar.url, overlayConfig.radar.options);
-  const floodZones = L.tileLayer.wms(overlayConfig.floodZones.url, overlayConfig.floodZones.options);
+  const floodZones = new ArcGISDynamicLayer('', {
+    ...overlayConfig.floodZones.options,
+    url: overlayConfig.floodZones.url,
+  });
 
   L.control
     .layers(null, {

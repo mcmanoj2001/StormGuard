@@ -16,13 +16,21 @@ export const overlayConfig = {
   },
 
   // FEMA National Flood Hazard Layer — official 100yr/500yr flood zones.
-  // TODO: confirm WMS layer id 28 ("Flood Hazard Zones") renders as expected.
+  // Layer id 28 ("Flood Hazard Zones") is confirmed correct — verified
+  // against the service's own layer list at
+  // https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer?f=json
+  // The WMS interface itself is NOT enabled on this service, though
+  // (its `supportedExtensions` lists only WFSServer, not WMSServer — every
+  // WMSServer request, with any parameters, returns the same generic
+  // ArcGIS 400). type is 'arcgis-dynamic', not 'wms', for that reason — it
+  // renders through the ArcGIS REST `export` operation instead, which is
+  // confirmed working (returns a real PNG) against the same MapServer.
   floodZones: {
-    type: 'wms',
-    url: 'https://hazards.fema.gov/arcgis/services/public/NFHL/MapServer/WMSServer',
+    type: 'arcgis-dynamic',
+    url: 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer',
     options: {
-      layers: '28',
-      format: 'image/png',
+      layerIds: '28',
+      format: 'png32',
       transparent: true,
       opacity: 0.45,
       attribution: 'FEMA National Flood Hazard Layer',
