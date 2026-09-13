@@ -134,6 +134,7 @@ All sources are free, require no paid API key unless noted, and are operated by 
 | USGS Instantaneous Values | waterservices.usgs.gov/nwis/iv/ | 15 min | Primary RT sensor feed. Stage height + discharge. No key. |
 | USGS Site Metadata | waterservices.usgs.gov/nwis/site/ | Static | Gauge lat/lon, datum, flood stage thresholds. Fetch once, cache. |
 | NWS AHPS Forecast | water.weather.gov/ahps2/ | 6h update | River stage forecasts, predicted crest time/height. Critical for trajectory. |
+| LiDAR/scanning-radar stage sensors (document the gap) | No aggregated public API | N/A | Real systems exist (NOAA's ANCHOR project — ~14 scanning stream radar/LiDAR sites reporting stage + velocity in real time; regional pilots like the Southeast Texas flood-sensor network) but none publish a free, nationally aggregated real-time feed — not integrable today. Separately, some individual USGS streamgages already use non-contact radar/LiDAR instruments in place of floats; that data reaches us unchanged via the IV feed above, since the API is sensor-agnostic. Naming this gap explicitly is an R2 point (awareness of novel/underutilized data). |
  
 ### Layer 2 — Weather & atmospheric
  

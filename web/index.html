@@ -61,7 +61,7 @@
           <tr><td>NWS Active Alerts (api.weather.gov)</td><td>Weather</td><td>60 s</td><td>✅ Live</td></tr>
           <tr><td>NHC forecast track/cone (ArcGIS REST)</td><td>Hurricane (upstream signal)</td><td>10 min</td><td>✅ Live</td></tr>
           <tr><td>NEXRAD radar tiles (Iowa Mesonet)</td><td>Weather</td><td>Live tiles</td><td>✅ Live</td></tr>
-          <tr><td>FEMA NFHL flood zones (WMS)</td><td>Infrastructure</td><td>Static</td><td>🚧 Layer unconfirmed</td></tr>
+          <tr><td>FEMA NFHL flood zones (ArcGIS REST)</td><td>Infrastructure</td><td>Static</td><td>✅ Live</td></tr>
           <tr><td>NWS AHPS/NWPS forecast crest</td><td>Hydrology</td><td>6 h</td><td>🚧 Not started</td></tr>
           <tr><td>Census ACS 5-yr population</td><td>Population</td><td>Annual</td><td>🚧 Stub (test mode only)</td></tr>
         </tbody>
@@ -71,9 +71,19 @@
       <h3>Known limitations</h3>
       <p>
         No official federal real-time power-outage API exists — this is a
-        documented data gap, not an oversight. Census population impact and
-        the FEMA flood-zone overlay are not yet wired to live data; enable
-        Test Scenario to see the intended experience with fixture data.
+        documented data gap, not an oversight. Census population impact is
+        not yet wired to live data; enable Test Scenario to see the intended
+        experience with fixture data.
+      </p>
+      <p>
+        LiDAR/scanning-radar river-stage sensors exist (e.g. NOAA's ANCHOR
+        project, ~14 sites nationwide) but are not aggregated into a public,
+        free, national real-time API the way USGS stage data is — so they
+        aren't a source we can integrate today. Note that some USGS
+        streamgages already use non-contact radar/LiDAR instruments instead
+        of traditional floats; that data reaches this app unchanged through
+        the same USGS Instantaneous Values feed above, since the API doesn't
+        distinguish sensor technology.
       </p>
 
       <h3>Map legend</h3>
