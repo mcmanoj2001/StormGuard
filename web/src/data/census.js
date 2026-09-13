@@ -25,17 +25,17 @@
 //    geometry itself can be demoed even without a key — only the actual
 //    headcount needs it.
 //
-// Scoped to Louisiana only (state FIPS 22). The default AOI also touches
-// southern Mississippi (the Pearl River AHPS gauges), but Census/TIGERweb
-// queries are inherently state-scoped, and the demo's population-affected
-// story concentrates in Louisiana — a known, documented scope limit, not an
-// oversight (see the About modal).
+// State-scoped by the user's selected region (see regions.js) — Census/
+// TIGERweb queries are inherently per-state, so a region spanning more than
+// one state (the default AOI also touches southern Mississippi, for the
+// Pearl River AHPS gauges) only gets population data for its primary state.
+// A known, documented scope limit, not an oversight (see the About modal).
 
 import { fetchJson } from '../fetchJson.js';
 import { cached } from '../cache.js';
 import { isTestMode, loadFixture } from '../testmode.js';
+import { DEFAULT_REGION } from './regions.js';
 
-const STATE_FIPS = '22'; // Louisiana
 const TIGERWEB_TRACTS =
   'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/4/query';
 const TIGERWEB_COUNTIES =
@@ -67,9 +67,9 @@ function mercatorToLatLon(x, y) {
   return { lat, lon };
 }
 
-async function fetchCountyNames() {
+async function fetchCountyNames(stateFips) {
   const url = new URL(TIGERWEB_COUNTIES);
-  url.searchParams.set('where', `STATE='${STATE_FIPS}'`);
+  url.searchParams.set('where', `STATE='${stateFips}'`);
   url.searchParams.set('outFields', 'COUNTY,NAME');
   url.searchParams.set('returnGeometry', 'false');
   url.searchParams.set('f', 'json');
@@ -82,9 +82,9 @@ async function fetchCountyNames() {
   return byFips;
 }
 
-async function fetchTractGeometry() {
+async function fetchTractGeometry(stateFips) {
   const url = new URL(TIGERWEB_TRACTS);
-  url.searchParams.set('where', `STATE='${STATE_FIPS}'`);
+  url.searchParams.set('where', `STATE='${stateFips}'`);
   url.searchParams.set('outFields', 'GEOID,COUNTY');
   url.searchParams.set('returnGeometry', 'true');
   url.searchParams.set('maxAllowableOffset', '500');
@@ -107,14 +107,14 @@ async function fetchTractGeometry() {
 // Returns null (not an empty map) when no key is configured, so the caller
 // can distinguish "population genuinely unavailable" from "zero people" —
 // an empty tract population would otherwise silently read as "nobody home".
-async function fetchTractPopulation() {
+async function fetchTractPopulation(stateFips) {
   const key = import.meta.env.VITE_CENSUS_API_KEY;
   if (!key) return null;
 
   const url = new URL(ACS_BASE);
   url.searchParams.set('get', 'B01003_001E');
   url.searchParams.set('for', 'tract:*');
-  url.searchParams.set('in', `state:${STATE_FIPS}`);
+  url.searchParams.set('in', `state:${stateFips}`);
   url.searchParams.set('key', key);
 
   const rows = await fetchJson(url.toString());
@@ -132,23 +132,23 @@ async function fetchTractPopulation() {
   return byGeoid;
 }
 
-export function getPopulation() {
-  return cached(`population:v2:${isTestMode()}`, TTL_S, async () => {
+export function getPopulation(stateFips = DEFAULT_REGION.fips) {
+  return cached(`population:v2:${isTestMode()}:${stateFips}`, TTL_S, async () => {
     if (isTestMode()) return loadFixture('population');
 
     // Geometry and population are independent federal sources — one being
     // down (or, for population, simply unconfigured) shouldn't block the
     // other, same bulkhead discipline as every other source in this app.
     const [geometry, population, countyNames] = await Promise.all([
-      fetchTractGeometry().catch((err) => {
+      fetchTractGeometry(stateFips).catch((err) => {
         console.error('tract geometry fetch failed', err);
         return [];
       }),
-      fetchTractPopulation().catch((err) => {
+      fetchTractPopulation(stateFips).catch((err) => {
         console.error('tract population fetch failed', err);
         return null;
       }),
-      fetchCountyNames().catch((err) => {
+      fetchCountyNames(stateFips).catch((err) => {
         console.error('county name fetch failed', err);
         return new Map();
       }),

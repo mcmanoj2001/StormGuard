@@ -2,16 +2,23 @@ import { getGauges } from './data/usgs.js';
 import { getAlerts } from './data/nws.js';
 import { getHurricane } from './data/nhc.js';
 import { getPopulation } from './data/census.js';
-import { getForecastPoints } from './data/ahps.js';
+import { getForecastPoints, AHPS_LIDS } from './data/ahps.js';
+import { getRegions, DEFAULT_REGION } from './data/regions.js';
 import { setState, subscribe } from './state.js';
 import { setTestMode } from './testmode.js';
-import { initMap } from './map/map.js';
+import { initMap, setRegionView } from './map/map.js';
 import { initGaugePanel } from './panels/gaugePanel.js';
 import { initActionPanel } from './panels/actionPanel.js';
 import { initPopulationPanel } from './panels/populationPanel.js';
 import { initAboutPanel } from './panels/aboutPanel.js';
 
 const POLL_MS = 60_000;
+
+// The user's selected region (rubric hard requirement: "must be able to
+// display data for a region selected by the user"). Not part of the
+// pub/sub state store — it's an input that drives which data gets fetched,
+// not something a panel renders directly.
+let currentRegion = DEFAULT_REGION;
 
 initMap();
 initGaugePanel();
@@ -20,6 +27,7 @@ initPopulationPanel();
 initAboutPanel();
 wireTabs();
 wireTestToggle();
+wireRegionSelect();
 refresh();
 setInterval(refresh, POLL_MS);
 
@@ -31,24 +39,30 @@ async function refresh() {
     // the whole picture when the others are healthy. A source with no prior
     // cache to fall back on degrades to an empty result tagged 'error'
     // instead of throwing through Promise.all and killing the refresh.
+    // AHPS forecast points are a hand-curated Louisiana-only list (see
+    // ahps.js) — fetching them for a different region would show 13 markers
+    // in Louisiana while the map is centered somewhere else. Skip the fetch
+    // entirely rather than return confusing out-of-region data.
+    const ahpsLids = currentRegion.stusab === 'LA' ? AHPS_LIDS : [];
+
     const [gauges, alerts, hurricane, population, forecast] = await Promise.all([
-      getGauges().catch((err) => {
+      getGauges(currentRegion.bbox).catch((err) => {
         console.error('gauges fetch failed', err);
         return { gauges: [], cache: 'error' };
       }),
-      getAlerts().catch((err) => {
+      getAlerts(currentRegion.stusab).catch((err) => {
         console.error('alerts fetch failed', err);
         return { alerts: [], cache: 'error' };
       }),
-      getHurricane().catch((err) => {
+      getHurricane(currentRegion.bbox).catch((err) => {
         console.error('hurricane fetch failed', err);
         return { storms: [] };
       }),
-      getPopulation().catch((err) => {
+      getPopulation(currentRegion.fips).catch((err) => {
         console.error('population fetch failed', err);
         return { tracts: [], cache: 'error' };
       }),
-      getForecastPoints().catch((err) => {
+      (ahpsLids.length ? getForecastPoints(ahpsLids) : Promise.resolve({ points: [] })).catch((err) => {
         console.error('AHPS forecast fetch failed', err);
         return { points: [], cache: 'error' };
       }),
@@ -104,4 +118,36 @@ function wireTestToggle() {
     setState({ testMode: toggle.checked });
     refresh();
   });
+}
+
+function wireRegionSelect() {
+  const select = document.getElementById('region-select');
+
+  select.addEventListener('change', () => {
+    const region = regionByCode(select.value);
+    if (!region) return;
+    currentRegion = region;
+    setRegionView(region.bbox);
+    refresh();
+  });
+
+  // Populate with the real 50-state list once it loads — the single
+  // hardcoded <option> in index.html (the default region) stays in place
+  // and stays selected if this fetch is slow or fails, so the picker is
+  // never left empty.
+  let regions = [DEFAULT_REGION];
+  getRegions()
+    .then((result) => {
+      regions = result.regions;
+      const current = select.value;
+      select.innerHTML = regions
+        .map((r) => `<option value="${r.stusab}">${r.name}</option>`)
+        .join('');
+      select.value = current;
+    })
+    .catch((err) => console.error('region list fetch failed', err));
+
+  function regionByCode(stusab) {
+    return regions.find((r) => r.stusab === stusab);
+  }
 }

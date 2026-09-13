@@ -39,6 +39,22 @@ body {
 .topbar-status.stale { color: #ffd166; }
 .topbar-status.error { color: #ff6b6b; }
 .test-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; cursor: pointer; }
+.region-select select {
+  font-size: 0.85rem;
+  background: #1f2b4d;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 
 .about-btn {
   font: inherit;

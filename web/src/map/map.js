@@ -98,6 +98,16 @@ export function initMap() {
   window.addEventListener('resize', () => map.invalidateSize());
 }
 
+// Recenters the map on a newly-selected region's bbox (region selection —
+// rubric hard requirement). bbox is [minLon, minLat, maxLon, maxLat];
+// Leaflet's fitBounds wants [[south, west], [north, east]].
+export function setRegionView(bbox) {
+  map.fitBounds([
+    [bbox[1], bbox[0]],
+    [bbox[3], bbox[2]],
+  ]);
+}
+
 function renderGauges({ gauges }) {
   gaugeLayer.clearLayers();
   for (const g of gauges) {

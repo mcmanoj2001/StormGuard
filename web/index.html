@@ -11,6 +11,12 @@
     <header class="topbar">
       <h1>⛈ StormGuard</h1>
       <div class="topbar-status" id="status-badge">Connecting…</div>
+      <label class="region-select">
+        <span class="sr-only">Region</span>
+        <select id="region-select">
+          <option value="LA">Louisiana</option>
+        </select>
+      </label>
       <label class="test-toggle">
         <input type="checkbox" id="test-mode-toggle" />
         <span>Test scenario</span>
@@ -106,6 +112,15 @@
         Calcasieu rivers — a curated set for this AOI, not the full national
         AHPS network, since the underlying API's own region-search doesn't
         reliably filter by area.
+      </p>
+      <p>
+        The region picker (top bar) re-scopes USGS gauges, NWS alerts, and
+        Census population to the selected state — all fetched fresh from
+        real federal data, not a demo-only switch. Two things stay
+        Louisiana-specific regardless of the picker: NWS forecast points
+        (the 13-point curated set above) and any AOI spanning more than one
+        state — Census/TIGERweb queries are inherently per-state, so a
+        multi-state region only gets population data for its primary state.
       </p>
 
       <h3>Map legend</h3>

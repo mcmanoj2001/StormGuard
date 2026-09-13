@@ -11,14 +11,15 @@
 import { fetchJson } from '../fetchJson.js';
 import { cached } from '../cache.js';
 import { isTestMode, loadFixture } from '../testmode.js';
+import { DEFAULT_REGION } from './regions.js';
 
 const USGS_IV = 'https://waterservices.usgs.gov/nwis/iv/';
 const TTL_S = 5 * 60;
 
-// Default area of interest: Louisiana / lower Mississippi (riverine flood
-// scenario). minLon,minLat,maxLon,maxLat — overridable per call for region
-// selection.
-export const DEFAULT_BBOX = [-93.5, 28.5, -88.0, 32.5];
+// Default area of interest — re-exported from regions.js's single source of
+// truth so this and nhc.js's fallback never drift from the actual default
+// region a user can also select from the UI. minLon,minLat,maxLon,maxLat.
+export const DEFAULT_BBOX = DEFAULT_REGION.bbox;
 
 // KNOWN LIMITATION (R3): these are fixed absolute stage-height thresholds,
 // not real per-gauge flood stage. A gauge's actual flood category depends on
@@ -75,50 +76,105 @@ function rateOfChange(points) {
   return (Number(latest.value) - Number(prior.value)) / hours;
 }
 
+// USGS's Instantaneous Values service rejects a bounding box past a certain
+// size — confirmed live via its own error on a Texas-sized request: "Bounding
+// Box too large [13.1x10.7 degrees]... must be <= 2.6 degrees at latitude
+// 25.8 with requested height of 10.7 degrees" (implies a width*height cap
+// around ~28 sq degrees). Louisiana's default bbox (~22 sq degrees) fits in
+// one request; region selection can pick a state several times that size.
+// SAFE_AREA is set comfortably under the observed ceiling so the default
+// region keeps making exactly the one request it always has (no behavior
+// change for the common case) while a larger region splits into a grid of
+// smaller requests instead of silently returning nothing.
+const SAFE_AREA_SQ_DEG = 24;
+const TILE_MAX_DEG = 3;
+
+function splitBbox([minLon, minLat, maxLon, maxLat]) {
+  const width = maxLon - minLon;
+  const height = maxLat - minLat;
+  if (width * height <= SAFE_AREA_SQ_DEG) return [[minLon, minLat, maxLon, maxLat]];
+
+  const cols = Math.max(1, Math.ceil(width / TILE_MAX_DEG));
+  const rows = Math.max(1, Math.ceil(height / TILE_MAX_DEG));
+  const tiles = [];
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      tiles.push([
+        minLon + (c * width) / cols,
+        minLat + (r * height) / rows,
+        minLon + ((c + 1) * width) / cols,
+        minLat + ((r + 1) * height) / rows,
+      ]);
+    }
+  }
+  return tiles;
+}
+
+async function fetchGaugesInBbox(bbox) {
+  const url = new URL(USGS_IV);
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('bBox', bbox.map((n) => n.toFixed(4)).join(','));
+  // 00065 = gage height (ft), 00060 = discharge (cfs)
+  url.searchParams.set('parameterCd', '00065,00060');
+  url.searchParams.set('siteStatus', 'active');
+  url.searchParams.set('period', 'PT4H');
+
+  const raw = await fetchJson(url.toString());
+
+  const bySite = new Map();
+  for (const series of raw.value?.timeSeries ?? []) {
+    const site = series.sourceInfo;
+    const id = site.siteCode?.[0]?.value;
+    if (!id) continue;
+    const entry = bySite.get(id) ?? {
+      id,
+      name: site.siteName,
+      lat: site.geoLocation?.geogLocation?.latitude,
+      lon: site.geoLocation?.geogLocation?.longitude,
+      stage_ft: null,
+      discharge_cfs: null,
+      rate_ft_per_hr: null,
+      time: null,
+    };
+    const param = series.variable?.variableCode?.[0]?.value;
+    const points = series.values?.[0]?.value ?? [];
+    const latest = points.at(-1);
+    if (latest) {
+      const num = Number(latest.value);
+      if (param === '00065') {
+        entry.stage_ft = num;
+        const rate = rateOfChange(points);
+        entry.rate_ft_per_hr = rate == null ? null : Math.round(rate * 100) / 100;
+      }
+      if (param === '00060') entry.discharge_cfs = num;
+      entry.time = latest.dateTime;
+    }
+    bySite.set(id, entry);
+  }
+  return bySite;
+}
+
 export function getGauges(bbox = DEFAULT_BBOX) {
   const key = `gauges:${isTestMode()}:${bbox.join(',')}`;
   return cached(key, TTL_S, async () => {
     if (isTestMode()) return loadFixture('gauges');
 
-    const url = new URL(USGS_IV);
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('bBox', bbox.map((n) => n.toFixed(4)).join(','));
-    // 00065 = gage height (ft), 00060 = discharge (cfs)
-    url.searchParams.set('parameterCd', '00065,00060');
-    url.searchParams.set('siteStatus', 'active');
-    url.searchParams.set('period', 'PT4H');
-
-    const raw = await fetchJson(url.toString());
+    const tiles = splitBbox(bbox);
+    // Each tile fetched (and caught) independently — the same bulkhead
+    // pattern as everywhere else in this app: one oversized or briefly-
+    // unlucky tile shouldn't blank out gauges from the rest of the region.
+    const tileResults = await Promise.all(
+      tiles.map((tile) =>
+        fetchGaugesInBbox(tile).catch((err) => {
+          console.error(`gauge tile fetch failed for bbox ${tile.join(',')}`, err);
+          return new Map();
+        })
+      )
+    );
 
     const bySite = new Map();
-    for (const series of raw.value?.timeSeries ?? []) {
-      const site = series.sourceInfo;
-      const id = site.siteCode?.[0]?.value;
-      if (!id) continue;
-      const entry = bySite.get(id) ?? {
-        id,
-        name: site.siteName,
-        lat: site.geoLocation?.geogLocation?.latitude,
-        lon: site.geoLocation?.geogLocation?.longitude,
-        stage_ft: null,
-        discharge_cfs: null,
-        rate_ft_per_hr: null,
-        time: null,
-      };
-      const param = series.variable?.variableCode?.[0]?.value;
-      const points = series.values?.[0]?.value ?? [];
-      const latest = points.at(-1);
-      if (latest) {
-        const num = Number(latest.value);
-        if (param === '00065') {
-          entry.stage_ft = num;
-          const rate = rateOfChange(points);
-          entry.rate_ft_per_hr = rate == null ? null : Math.round(rate * 100) / 100;
-        }
-        if (param === '00060') entry.discharge_cfs = num;
-        entry.time = latest.dateTime;
-      }
-      bySite.set(id, entry);
+    for (const tileMap of tileResults) {
+      for (const [id, entry] of tileMap) bySite.set(id, entry);
     }
 
     const gauges = [...bySite.values()].map((g) => ({
