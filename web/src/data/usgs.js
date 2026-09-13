@@ -20,9 +20,31 @@ const TTL_S = 5 * 60;
 // selection.
 export const DEFAULT_BBOX = [-93.5, 28.5, -88.0, 32.5];
 
-// TODO(R3): replace fixed thresholds with real per-gauge NWS flood stages
-// (action/minor/moderate/major) from the NWPS gauge metadata API. Fixed
-// thresholds misclassify gauges whose datum puts normal pool at high stage.
+// KNOWN LIMITATION (R3): these are fixed absolute stage-height thresholds,
+// not real per-gauge flood stage. A gauge's actual flood category depends on
+// its local datum — the same 20ft reading is "moderate" on one river and
+// "normal pool" on another. Calibrated to look reasonable for the default
+// Louisiana / lower-Mississippi AOI only; expanding past that AOI (or
+// enabling region selection) will misclassify gauges elsewhere. Surfaced to
+// the user in the About modal's Known Limitations section rather than left
+// as a silent assumption.
+//
+// Investigated two paths to real per-gauge thresholds and shelved both for
+// now rather than ship something unreliable:
+//   - NWS NWPS/AHPS (api.water.noaa.gov/nwps/v1/gauges/{lid}) DOES have real
+//     flood.categories.{major,moderate,minor}.stage per site — but it's
+//     keyed by NWS Location ID (LID), not USGS site number, and the list
+//     endpoint doesn't reliably return a usgsId to cross-reference (tested:
+//     empty on every gauge checked, and its bbox filter didn't work either).
+//     Needs a proper USGS-site-to-NWS-LID crosswalk, not a live lookup.
+//   - USGS's own site metadata service (waterservices.usgs.gov/nwis/site/)
+//     does NOT publish flood-stage thresholds despite CONTEXT.md's Layer 1
+//     table listing that — confirmed by fetching a real site's expanded
+//     output and finding no flood/stage columns at all. That field simply
+//     isn't there; worth fixing in CONTEXT.md separately.
+// Real fix: build the LID crosswalk once (as static/cached data, not a
+// live per-gauge call) as part of the NWS AHPS forecast-crest integration —
+// that work needs the same crosswalk anyway, so solve it once, not twice.
 function classifySeverity(stageFt) {
   if (stageFt == null) return 'unknown';
   if (stageFt >= 30) return 'major';
