@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { setState, subscribe } from '../state.js';
 import { overlayConfig } from '../data/layers.js';
 import { gaugeInsight } from '../insight.js';
+import { categoryLabel, categorySeverity } from '../data/ahps.js';
 
 export const SEVERITY_COLORS = {
   extreme: '#b30000',
@@ -52,6 +53,7 @@ let map;
 const gaugeLayer = L.layerGroup();
 const alertLayer = L.layerGroup();
 const stormLayer = L.layerGroup();
+const forecastLayer = L.layerGroup();
 
 export function initMap() {
   map = L.map('map', { zoomControl: true }).setView([30.2, -90.9], 8);
@@ -64,6 +66,7 @@ export function initMap() {
   gaugeLayer.addTo(map);
   alertLayer.addTo(map);
   stormLayer.addTo(map);
+  forecastLayer.addTo(map);
 
   // Toggleable raster overlays straight from federal/public tile servers.
   const radar =
@@ -80,6 +83,7 @@ export function initMap() {
       'Stream gauges': gaugeLayer,
       'NWS alerts': alertLayer,
       'Hurricane track': stormLayer,
+      'NWS forecast points': forecastLayer,
       'Precipitation radar': radar,
       'FEMA flood zones': floodZones,
     })
@@ -88,6 +92,7 @@ export function initMap() {
   subscribe('gauges', renderGauges);
   subscribe('alerts', renderAlerts);
   subscribe('storms', renderStorms);
+  subscribe('forecastPoints', renderForecastPoints);
 
   // Repaint tiles when the viewport changes (rotation, split-screen, DevTools).
   window.addEventListener('resize', () => map.invalidateSize());
@@ -115,6 +120,39 @@ function renderGauges({ gauges }) {
         { className: 'insight-tip' }
       )
       .addTo(gaugeLayer);
+  }
+}
+
+// Diamond markers (not circles) so an NWS forecast point is visually
+// distinct from a USGS live-reading gauge at a glance — same severity
+// palette, different shape, since these are a different kind of claim
+// (NWS's own forecast + authoritative flood category, not a raw reading).
+const forecastIcon = (color) =>
+  L.divIcon({
+    className: 'forecast-marker',
+    html: `<span style="background:${color}"></span>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+
+function renderForecastPoints({ forecastPoints }) {
+  forecastLayer.clearLayers();
+  for (const p of forecastPoints) {
+    if (p.lat == null || p.lon == null) continue;
+    const color = SEVERITY_COLORS[categorySeverity(p.floodCategory)] ?? SEVERITY_COLORS.unknown;
+    const forecastLine = p.forecast
+      ? `Forecast: ${p.forecast.stage_ft ?? '—'} ft by ${
+          p.forecast.validTime ? new Date(p.forecast.validTime).toLocaleString() : '—'
+        } — ${categoryLabel(p.forecast.floodCategory)}<br>`
+      : '';
+    L.marker([p.lat, p.lon], { icon: forecastIcon(color) })
+      .bindTooltip(
+        `<strong>${p.name}</strong> (NWS forecast point)<br>` +
+          `Now: ${p.stage_ft ?? '—'} ft — ${categoryLabel(p.floodCategory)}<br>` +
+          forecastLine,
+        { className: 'insight-tip' }
+      )
+      .addTo(forecastLayer);
   }
 }
 

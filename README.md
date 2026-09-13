@@ -48,7 +48,7 @@ CONTEXT.md           project working document — the single source of truth
 | NHC forecast track/cone (proactive inland-flood signal) | `src/data/nhc.js` | 10 min cache | ✅ live (empty when no active storm) |
 | NEXRAD precipitation radar (tiles) | `src/data/layers.js` | live tiles | ✅ live (Mesonet mirror) |
 | FEMA NFHL flood zones (ArcGIS REST export — WMS isn't enabled on this service) | `src/data/layers.js` | live tiles | ✅ live (layer 28, verified) |
-| NWS AHPS/NWPS forecast crest + flood stages | — | 6 h | 🚧 not started |
+| NWS AHPS/NWPS forecast crest + flood stages | `src/data/ahps.js` | 6 h | ✅ live (13 curated forecast points; real per-site flood categories) |
 | Census ACS 5-yr population | `src/data/census.js` | static | 🚧 stub (test fixture works) |
 
 **Known data gap (documented deliberately, per rubric R2):** there is no

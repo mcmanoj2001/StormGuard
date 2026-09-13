@@ -2,6 +2,7 @@ import { getGauges } from './data/usgs.js';
 import { getAlerts } from './data/nws.js';
 import { getHurricane } from './data/nhc.js';
 import { getPopulation } from './data/census.js';
+import { getForecastPoints } from './data/ahps.js';
 import { setState, subscribe } from './state.js';
 import { setTestMode } from './testmode.js';
 import { initMap } from './map/map.js';
@@ -30,7 +31,7 @@ async function refresh() {
     // the whole picture when the others are healthy. A source with no prior
     // cache to fall back on degrades to an empty result tagged 'error'
     // instead of throwing through Promise.all and killing the refresh.
-    const [gauges, alerts, hurricane, population] = await Promise.all([
+    const [gauges, alerts, hurricane, population, forecast] = await Promise.all([
       getGauges().catch((err) => {
         console.error('gauges fetch failed', err);
         return { gauges: [], cache: 'error' };
@@ -47,8 +48,12 @@ async function refresh() {
         console.error('population fetch failed', err);
         return { tracts: [], cache: 'error' };
       }),
+      getForecastPoints().catch((err) => {
+        console.error('AHPS forecast fetch failed', err);
+        return { points: [], cache: 'error' };
+      }),
     ]);
-    const degraded = [gauges, alerts, population].some(
+    const degraded = [gauges, alerts, population, forecast].some(
       (r) => r.cache === 'stale' || r.cache === 'error'
     );
     setState({
@@ -56,6 +61,7 @@ async function refresh() {
       alerts: alerts.alerts ?? [],
       storms: hurricane.storms ?? [],
       tracts: population.tracts ?? [],
+      forecastPoints: forecast.points ?? [],
       lastUpdated: new Date(),
       connection: degraded ? 'stale' : 'live',
     });

@@ -62,7 +62,7 @@
           <tr><td>NHC forecast track/cone (ArcGIS REST)</td><td>Hurricane (upstream signal)</td><td>10 min</td><td>✅ Live</td></tr>
           <tr><td>NEXRAD radar tiles (Iowa Mesonet)</td><td>Weather</td><td>Live tiles</td><td>✅ Live</td></tr>
           <tr><td>FEMA NFHL flood zones (ArcGIS REST)</td><td>Infrastructure</td><td>Static</td><td>✅ Live</td></tr>
-          <tr><td>NWS AHPS/NWPS forecast crest</td><td>Hydrology</td><td>6 h</td><td>🚧 Not started</td></tr>
+          <tr><td>NWS AHPS/NWPS forecast crest (api.water.noaa.gov)</td><td>Hydrology</td><td>6 h</td><td>✅ Live (13 curated points)</td></tr>
           <tr><td>Census ACS 5-yr population</td><td>Population</td><td>Annual</td><td>🚧 Stub (test mode only)</td></tr>
         </tbody>
       </table>
@@ -94,6 +94,15 @@
         lower-Mississippi area shown above; treat severity colors as
         approximate for gauges elsewhere.
       </p>
+      <p>
+        NWS forecast points (◆ diamond markers) use NWS's own authoritative
+        flood category and an actual forecast crest, unlike the USGS gauges'
+        approximate colors above. Coverage is 13 individually-verified
+        forecast points across the Mississippi, Pearl, Atchafalaya, Red, and
+        Calcasieu rivers — a curated set for this AOI, not the full national
+        AHPS network, since the underlying API's own region-search doesn't
+        reliably filter by area.
+      </p>
 
       <h3>Map legend</h3>
       <ul class="legend">
@@ -102,6 +111,7 @@
         <li><span class="swatch" style="background:#fdcc8a"></span> Minor flood stage</li>
         <li><span class="swatch" style="background:#2b8cbe"></span> Normal range</li>
         <li><span class="swatch" style="background:#999999"></span> No reading available</li>
+        <li>◆ Diamond marker — NWS forecast point (same colors, authoritative category + crest forecast)</li>
       </ul>
 
       <div class="about-actions">

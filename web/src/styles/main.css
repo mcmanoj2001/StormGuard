@@ -170,6 +170,17 @@ dd { font-weight: 600; }
 .leaflet-tooltip.insight-tip { font-size: 0.8rem; max-width: 220px; white-space: normal; line-height: 1.4; }
 .leaflet-tooltip.insight-tip .tip-instruction { font-weight: 600; }
 
+/* NWS forecast points render as diamonds (vs. circular USGS gauges) so the
+   two data sources stay visually distinct at a glance. */
+.forecast-marker span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #fff;
+  transform: rotate(45deg);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
 /* Tablet: narrower panel */
 @media (max-width: 1024px) {
   :root { --panel-w: 300px; }

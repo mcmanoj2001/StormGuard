@@ -2,22 +2,23 @@
 // Judges' Choice). Cross-references active alerts with gauge severity AND
 // trajectory to produce a prioritized plain-language action list.
 //
-// TODO: full rules engine per CONTEXT §5 Tier 3 — fold in forecast crest
-// time, affected population, and flood-zone overlap for ranked
-// evacuate / prepare / monitor recommendations.
+// Forecast crest data (NWS AHPS) is now folded in below — a Tier 3 first
+// step per CONTEXT §5. Still TODO: affected population and flood-zone
+// overlap, to complete the full ranked evacuate/prepare/monitor engine.
 
 import { getState, subscribe } from '../state.js';
 import { gaugeInsight } from '../insight.js';
+import { categoryLabel } from '../data/ahps.js';
 
 const el = () => document.getElementById('tab-actions');
 
 export function initActionPanel() {
   render();
-  subscribe(['alerts', 'gauges', 'storms'], render);
+  subscribe(['alerts', 'gauges', 'storms', 'forecastPoints'], render);
 }
 
 function render() {
-  const { alerts, gauges, storms } = getState();
+  const { alerts, gauges, storms, forecastPoints } = getState();
   const cards = [];
 
   // Proactive inland-flood preparation from hurricane track data (CONTEXT §3
@@ -63,6 +64,44 @@ function render() {
         <h3>River at ${g.severity} flood level${rising ? ' — RISING' : ''}</h3>
         <p>${g.name} — stage ${g.stage_ft} ft${rate}.</p>
         <p class="instruction">▶ ${gaugeInsight(g)}</p>
+      </article>`);
+  }
+
+  // NWS forecast points: authoritative flood category (not the approximate
+  // fixed-threshold one gauges.js falls back to) plus an actual forecast
+  // crest — surfaced only when either the current or forecasted category is
+  // elevated, so a "no_flooding" point stays quiet like a normal gauge does.
+  const ELEVATED = ['action', 'minor', 'moderate', 'major'];
+  const severityRank = { major: 3, moderate: 2, minor: 1, action: 0 };
+  const worthShowing = forecastPoints
+    .filter((p) => ELEVATED.includes(p.floodCategory) || ELEVATED.includes(p.forecast?.floodCategory))
+    .sort((a, b) => {
+      const rank = (p) => Math.max(severityRank[p.floodCategory] ?? -1, severityRank[p.forecast?.floodCategory] ?? -1);
+      return rank(b) - rank(a);
+    });
+
+  for (const p of worthShowing) {
+    const worsening =
+      p.forecast &&
+      (severityRank[p.forecast.floodCategory] ?? -1) > (severityRank[p.floodCategory] ?? -1);
+    const peakCategory = worsening ? p.forecast.floodCategory : p.floodCategory;
+    const cardSeverity = peakCategory === 'major' || worsening ? 'extreme' : 'severe';
+    const forecastLine = p.forecast
+      ? `Forecast: ${p.forecast.stage_ft ?? '—'} ft by ${
+          p.forecast.validTime
+            ? new Date(p.forecast.validTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+            : '—'
+        } (${categoryLabel(p.forecast.floodCategory)}).`
+      : '';
+    cards.push(`
+      <article class="card severity-${cardSeverity}">
+        <h3>NWS Forecast — ${categoryLabel(peakCategory)}${worsening ? ' — RISING' : ''}</h3>
+        <p>${p.name} — now ${p.stage_ft ?? '—'} ft (${categoryLabel(p.floodCategory)}). ${forecastLine}</p>
+        <p class="instruction">▶ ${
+          worsening
+            ? 'Crest expected to exceed current stage — pre-stage assets ahead of the forecast peak.'
+            : 'Verify road closures and monitor for the forecast crest.'
+        }</p>
       </article>`);
   }
 

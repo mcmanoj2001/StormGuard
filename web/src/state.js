@@ -7,6 +7,7 @@ const state = {
   alerts: [],
   storms: [],
   tracts: [],
+  forecastPoints: [],
   selectedGaugeId: null,
   lastUpdated: null,
   connection: 'connecting', // connecting | live | stale | error

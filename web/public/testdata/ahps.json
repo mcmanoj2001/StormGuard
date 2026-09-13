@@ -1,0 +1,62 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "points": [
+    {
+      "lid": "BTRL1",
+      "name": "Mississippi River at Baton Rouge",
+      "lat": 30.4457,
+      "lon": -91.1878,
+      "stage_ft": 32.4,
+      "floodCategory": "moderate",
+      "categories": { "action": 22, "minor": 29, "moderate": 35, "major": 40 },
+      "forecast": {
+        "stage_ft": 38.6,
+        "validTime": "2026-07-21T12:00:00Z",
+        "floodCategory": "major"
+      }
+    },
+    {
+      "lid": "RRLL1",
+      "name": "Mississippi River at Red River Landing",
+      "lat": 30.9608,
+      "lon": -91.6644,
+      "stage_ft": 41.2,
+      "floodCategory": "action",
+      "categories": { "action": 40, "minor": 48, "moderate": 55, "major": 64 },
+      "forecast": {
+        "stage_ft": 47.5,
+        "validTime": "2026-07-22T00:00:00Z",
+        "floodCategory": "minor"
+      }
+    },
+    {
+      "lid": "AEXL1",
+      "name": "Red River at Alexandria",
+      "lat": 31.3149,
+      "lon": -92.4451,
+      "stage_ft": 18.9,
+      "floodCategory": "no_flooding",
+      "categories": { "action": 24, "minor": 28, "moderate": 32, "major": 36 },
+      "forecast": {
+        "stage_ft": 19.4,
+        "validTime": "2026-07-20T12:00:00Z",
+        "floodCategory": "no_flooding"
+      }
+    },
+    {
+      "lid": "MCGL1",
+      "name": "Atchafalaya River at Morgan City",
+      "lat": 29.6997,
+      "lon": -91.2071,
+      "stage_ft": 5.1,
+      "floodCategory": "no_flooding",
+      "categories": { "action": 5, "minor": 6, "moderate": 7, "major": 8 },
+      "forecast": {
+        "stage_ft": 5.6,
+        "validTime": "2026-07-20T06:00:00Z",
+        "floodCategory": "no_flooding"
+      }
+    }
+  ]
+}
