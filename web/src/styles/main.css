@@ -197,6 +197,29 @@ dd { font-weight: 600; }
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
+/* Hospital/critical-facility markers: a squared plus glyph, gray by default
+   and red when inside an active NWS warning polygon (rubric "infrastructure
+   at risk"). Square (not circle/diamond) keeps all three point layers
+   visually distinct at a glance. */
+.facility-marker span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1.5px solid #fff;
+  background: #666;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+.facility-marker.at-risk span {
+  background: var(--c-extreme);
+}
+
 /* Tablet: narrower panel */
 @media (max-width: 1024px) {
   :root { --panel-w: 300px; }

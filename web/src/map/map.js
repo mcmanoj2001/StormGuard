@@ -7,6 +7,7 @@ import { setState, subscribe } from '../state.js';
 import { overlayConfig } from '../data/layers.js';
 import { gaugeInsight } from '../insight.js';
 import { categoryLabel, categorySeverity } from '../data/ahps.js';
+import { pointInGeometry } from '../geo.js';
 
 export const SEVERITY_COLORS = {
   extreme: '#b30000',
@@ -54,6 +55,7 @@ const gaugeLayer = L.layerGroup();
 const alertLayer = L.layerGroup();
 const stormLayer = L.layerGroup();
 const forecastLayer = L.layerGroup();
+const facilityLayer = L.layerGroup();
 
 export function initMap() {
   map = L.map('map', { zoomControl: true }).setView([30.2, -90.9], 8);
@@ -67,6 +69,7 @@ export function initMap() {
   alertLayer.addTo(map);
   stormLayer.addTo(map);
   forecastLayer.addTo(map);
+  facilityLayer.addTo(map);
 
   // Toggleable raster overlays straight from federal/public tile servers.
   const radar =
@@ -84,6 +87,7 @@ export function initMap() {
       'NWS alerts': alertLayer,
       'Hurricane track': stormLayer,
       'NWS forecast points': forecastLayer,
+      'Critical facilities (hospitals)': facilityLayer,
       'Precipitation radar': radar,
       'FEMA flood zones': floodZones,
     })
@@ -93,6 +97,9 @@ export function initMap() {
   subscribe('alerts', renderAlerts);
   subscribe('storms', renderStorms);
   subscribe('forecastPoints', renderForecastPoints);
+  // Facility "at risk" status depends on active alert polygons, not just the
+  // facility list itself — re-render on either changing.
+  subscribe(['facilities', 'alerts'], renderFacilities);
 
   // Repaint tiles when the viewport changes (rotation, split-screen, DevTools).
   window.addEventListener('resize', () => map.invalidateSize());
@@ -163,6 +170,45 @@ function renderForecastPoints({ forecastPoints }) {
         { className: 'insight-tip' }
       )
       .addTo(forecastLayer);
+  }
+}
+
+// Hospital markers use a distinct square-plus glyph (not a circle or
+// diamond, both already taken) so all three point layers stay visually
+// distinguishable at a glance. "At risk" (red) vs. normal (gray) isn't a
+// property of the facility itself — it's computed fresh each render against
+// whichever alert polygons are currently active.
+const facilityIcon = (atRisk) =>
+  L.divIcon({
+    className: `facility-marker${atRisk ? ' at-risk' : ''}`,
+    html: '<span>+</span>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+
+// Rubric item 11 ("infrastructure at risk"): a facility is flagged red when
+// it falls inside an active severe/extreme NWS warning polygon, using the
+// same real point-in-polygon test the population panel uses for tracts.
+// FEMA's flood-zone layer can't be used for this — it's rendered as ArcGIS
+// `export` map tiles (see ArcGISDynamicLayer above), not queryable polygon
+// geometry, so "within the flood zone" isn't something this app can test
+// directly; NWS warning-area overlap is the honest substitute, not a stand-in
+// pretending to be the same thing.
+function renderFacilities({ facilities, alerts }) {
+  facilityLayer.clearLayers();
+  const activeAlerts = alerts.filter((a) => ['extreme', 'severe'].includes(a.severity));
+  for (const f of facilities) {
+    if (f.lat == null || f.lon == null) continue;
+    const atRisk = activeAlerts.some((a) => pointInGeometry(f.lon, f.lat, a.geometry));
+    L.marker([f.lat, f.lon], { icon: facilityIcon(atRisk) })
+      .bindTooltip(
+        `<strong>${f.name}</strong> (hospital)<br>` +
+          (atRisk
+            ? '<span class="tip-instruction">▶ Inside an active NWS warning area</span>'
+            : 'No active warning covers this location'),
+        { className: 'insight-tip' }
+      )
+      .addTo(facilityLayer);
   }
 }
 

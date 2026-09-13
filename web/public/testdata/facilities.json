@@ -1,0 +1,24 @@
+{
+  "source": "test-fixture",
+  "updated": "2026-07-18T12:00:00Z",
+  "facilities": [
+    {
+      "id": "node/test-1",
+      "name": "Denham Springs Community Hospital",
+      "lat": 30.49,
+      "lon": -90.95
+    },
+    {
+      "id": "node/test-2",
+      "name": "Baton Rouge General Medical Center",
+      "lat": 30.45,
+      "lon": -91.25
+    },
+    {
+      "id": "way/test-3",
+      "name": "Our Lady of the Lake Regional Medical Center",
+      "lat": 30.41,
+      "lon": -91.19
+    }
+  ]
+}

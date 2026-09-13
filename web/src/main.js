@@ -3,6 +3,7 @@ import { getAlerts } from './data/nws.js';
 import { getHurricane } from './data/nhc.js';
 import { getPopulation } from './data/census.js';
 import { getForecastPoints, AHPS_LIDS } from './data/ahps.js';
+import { getFacilities } from './data/infrastructure.js';
 import { getRegions, DEFAULT_REGION } from './data/regions.js';
 import { setState, subscribe } from './state.js';
 import { setTestMode } from './testmode.js';
@@ -45,7 +46,7 @@ async function refresh() {
     // entirely rather than return confusing out-of-region data.
     const ahpsLids = currentRegion.stusab === 'LA' ? AHPS_LIDS : [];
 
-    const [gauges, alerts, hurricane, population, forecast] = await Promise.all([
+    const [gauges, alerts, hurricane, population, forecast, facilities] = await Promise.all([
       getGauges(currentRegion.bbox).catch((err) => {
         console.error('gauges fetch failed', err);
         return { gauges: [], cache: 'error' };
@@ -66,8 +67,15 @@ async function refresh() {
         console.error('AHPS forecast fetch failed', err);
         return { points: [], cache: 'error' };
       }),
+      // 24h-cached (see infrastructure.js) — this only makes a live Overpass
+      // call the first time a region is viewed each day; every other refresh
+      // in between is a free cache hit, same pattern as census population.
+      getFacilities(currentRegion.bbox).catch((err) => {
+        console.error('infrastructure fetch failed', err);
+        return { facilities: [], cache: 'error' };
+      }),
     ]);
-    const degraded = [gauges, alerts, population, forecast].some(
+    const degraded = [gauges, alerts, population, forecast, facilities].some(
       (r) => r.cache === 'stale' || r.cache === 'error'
     );
     setState({
@@ -76,6 +84,7 @@ async function refresh() {
       storms: hurricane.storms ?? [],
       tracts: population.tracts ?? [],
       forecastPoints: forecast.points ?? [],
+      facilities: facilities.facilities ?? [],
       lastUpdated: new Date(),
       connection: degraded ? 'stale' : 'live',
     });

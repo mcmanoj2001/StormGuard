@@ -8,6 +8,7 @@ const state = {
   storms: [],
   tracts: [],
   forecastPoints: [],
+  facilities: [],
   selectedGaugeId: null,
   lastUpdated: null,
   connection: 'connecting', // connecting | live | stale | error

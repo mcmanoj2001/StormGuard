@@ -70,6 +70,7 @@
           <tr><td>FEMA NFHL flood zones (ArcGIS REST)</td><td>Infrastructure</td><td>Static</td><td>✅ Live</td></tr>
           <tr><td>NWS AHPS/NWPS forecast crest (api.water.noaa.gov)</td><td>Hydrology</td><td>6 h</td><td>✅ Live (13 curated points)</td></tr>
           <tr><td>Census ACS 5-yr population + TIGERweb tract geometry</td><td>Population</td><td>24 h</td><td>✅ Live geometry; population needs an API key</td></tr>
+          <tr><td>OpenStreetMap hospitals (Overpass API)</td><td>Infrastructure</td><td>24 h</td><td>✅ Live</td></tr>
         </tbody>
       </table>
       </div>
@@ -123,6 +124,17 @@
         multi-state region only gets population data for its primary state.
       </p>
 
+      <p>
+        Hospitals (◼+ square markers) come from OpenStreetMap. A hospital is
+        flagged red ("at risk") when it falls inside an active severe/extreme
+        NWS warning polygon — the same real point-in-polygon test used for
+        the Population panel. This is deliberately NOT tested against the
+        FEMA flood-zone layer: that layer is rendered as pre-rasterized map
+        tiles (ArcGIS `export` images), not queryable polygon geometry, so
+        "inside the FEMA flood zone" isn't something this app can actually
+        check — NWS warning-area overlap is the honest substitute.
+      </p>
+
       <h3>Map legend</h3>
       <ul class="legend">
         <li><span class="swatch" style="background:#b30000"></span> Major flood stage</li>
@@ -131,6 +143,7 @@
         <li><span class="swatch" style="background:#2b8cbe"></span> Normal range</li>
         <li><span class="swatch" style="background:#999999"></span> No reading available</li>
         <li>◆ Diamond marker — NWS forecast point (same colors, authoritative category + crest forecast)</li>
+        <li>◼+ Square marker — hospital (red = inside an active NWS warning area, gray = not)</li>
       </ul>
 
       <div class="about-actions">

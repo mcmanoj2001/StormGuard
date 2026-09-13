@@ -50,6 +50,7 @@ CONTEXT.md           project working document — the single source of truth
 | FEMA NFHL flood zones (ArcGIS REST export — WMS isn't enabled on this service) | `src/data/layers.js` | live tiles | ✅ live (layer 28, verified) |
 | NWS AHPS/NWPS forecast crest + flood stages | `src/data/ahps.js` | 6 h | ✅ live (13 curated forecast points; real per-site flood categories) |
 | Census ACS 5-yr population + TIGERweb tract geometry | `src/data/census.js` | 24 h | ✅ live geometry/point-in-polygon; population counts need `VITE_CENSUS_API_KEY` |
+| OpenStreetMap hospitals (Overpass API) | `src/data/infrastructure.js` | 24 h | ✅ live; "at risk" = inside an active NWS warning polygon |
 
 **Known data gap (documented deliberately, per rubric R2):** there is no
 official federal real-time power-outage API; PowerOutage.us is the best
