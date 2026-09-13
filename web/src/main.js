@@ -25,28 +25,48 @@ setInterval(refresh, POLL_MS);
 async function refresh() {
   const badge = document.getElementById('status-badge');
   try {
-    // NHC feed is non-fatal: no active storm (or a dead endpoint) must never
-    // blank the flood picture.
+    // Every source is caught independently: one dead upstream (no active
+    // storm, a rate-limited gauge feed, a Census outage) must never blank
+    // the whole picture when the others are healthy. A source with no prior
+    // cache to fall back on degrades to an empty result tagged 'error'
+    // instead of throwing through Promise.all and killing the refresh.
     const [gauges, alerts, hurricane, population] = await Promise.all([
-      getGauges(),
-      getAlerts(),
-      getHurricane().catch(() => ({ storms: [] })),
-      getPopulation(),
+      getGauges().catch((err) => {
+        console.error('gauges fetch failed', err);
+        return { gauges: [], cache: 'error' };
+      }),
+      getAlerts().catch((err) => {
+        console.error('alerts fetch failed', err);
+        return { alerts: [], cache: 'error' };
+      }),
+      getHurricane().catch((err) => {
+        console.error('hurricane fetch failed', err);
+        return { storms: [] };
+      }),
+      getPopulation().catch((err) => {
+        console.error('population fetch failed', err);
+        return { tracts: [], cache: 'error' };
+      }),
     ]);
-    const stale = [gauges, alerts].some((r) => r.cache === 'stale');
+    const degraded = [gauges, alerts, population].some(
+      (r) => r.cache === 'stale' || r.cache === 'error'
+    );
     setState({
       gauges: gauges.gauges ?? [],
       alerts: alerts.alerts ?? [],
       storms: hurricane.storms ?? [],
       tracts: population.tracts ?? [],
       lastUpdated: new Date(),
-      connection: stale ? 'stale' : 'live',
+      connection: degraded ? 'stale' : 'live',
     });
-    badge.textContent = stale
+    badge.textContent = degraded
       ? `⚠ Data delayed · ${new Date().toLocaleTimeString()}`
       : `● Live · ${new Date().toLocaleTimeString()}`;
-    badge.className = `topbar-status ${stale ? 'stale' : 'live'}`;
+    badge.className = `topbar-status ${degraded ? 'stale' : 'live'}`;
   } catch (err) {
+    // Only reachable now for something outside the four fetches themselves
+    // (e.g. setState throwing) — each data source already degrades on its
+    // own above rather than reaching this block.
     console.error('refresh failed', err);
     setState({ connection: 'error' });
     badge.textContent = '○ Offline — retrying';
