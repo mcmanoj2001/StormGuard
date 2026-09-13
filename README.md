@@ -47,7 +47,7 @@ CONTEXT.md           project working document — the single source of truth
 | NWS Active Alerts | `src/data/nws.js` | 60 s cache | ✅ live |
 | NHC forecast track/cone (proactive inland-flood signal) | `src/data/nhc.js` | 10 min cache | ✅ live (empty when no active storm) |
 | NEXRAD precipitation radar (tiles) | `src/data/layers.js` | live tiles | ✅ live (Mesonet mirror) |
-| FEMA NFHL flood zones (WMS) | `src/data/layers.js` | static | 🚧 layer id TBC |
+| FEMA NFHL flood zones (ArcGIS REST export — WMS isn't enabled on this service) | `src/data/layers.js` | live tiles | ✅ live (layer 28, verified) |
 | NWS AHPS/NWPS forecast crest + flood stages | — | 6 h | 🚧 not started |
 | Census ACS 5-yr population | `src/data/census.js` | static | 🚧 stub (test fixture works) |
 
