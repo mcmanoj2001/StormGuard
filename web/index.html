@@ -135,6 +135,18 @@
         check — NWS warning-area overlap is the honest substitute.
       </p>
 
+      <p>
+        The Actions tab ranks every signal — hurricane lead-time, active NWS
+        alerts, gauge trajectory, and AHPS forecast crests — into one
+        EVACUATE / PREPARE / MONITOR list, not four separately-sorted
+        sections. A forecast crest arriving within 24h pulls its tier up; a
+        warned area with a hospital or a large estimated population inside it
+        pulls up anything geographically inside that same area (a gauge, a
+        forecast point, or the alert itself). "Flood-zone overlap" uses the
+        active NWS warning polygon as the area, not FEMA's zone, for the same
+        reason the infrastructure layer does above.
+      </p>
+
       <h3>Map legend</h3>
       <ul class="legend">
         <li><span class="swatch" style="background:#b30000"></span> Major flood stage</li>

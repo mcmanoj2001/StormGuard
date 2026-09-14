@@ -150,6 +150,32 @@ dialog#about-modal p { font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.4re
 
 .muted { color: #777; font-size: 0.9rem; }
 
+.tier-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+  margin: 1.1rem 0 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #ddd;
+}
+.tier-heading:first-child { margin-top: 0; }
+.tier-heading.tier-evacuate { color: var(--c-extreme); border-bottom-color: var(--c-extreme); }
+.tier-heading.tier-prepare { color: #b5650a; border-bottom-color: var(--c-moderate); }
+.tier-heading.tier-monitor { color: #1f5f8b; border-bottom-color: var(--c-normal); }
+.tier-count {
+  background: #eee;
+  color: #555;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .card {
   border-left: 5px solid #999;
   background: #fff;
