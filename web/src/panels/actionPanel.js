@@ -23,7 +23,7 @@ const el = () => document.getElementById('tab-actions');
 
 export function initActionPanel() {
   render();
-  subscribe(['alerts', 'gauges', 'storms', 'forecastPoints', 'tracts', 'facilities'], render);
+  subscribe(['alerts', 'gauges', 'storms', 'forecastPoints', 'tracts', 'facilities', 'connection'], render);
 }
 
 function areaContextLine(alert) {
@@ -45,7 +45,7 @@ function card(tier, score, severityClass, html) {
 }
 
 function render() {
-  const { alerts, gauges, storms, forecastPoints, tracts, facilities } = getState();
+  const { alerts, gauges, storms, forecastPoints, tracts, facilities, connection } = getState();
   const annotatedAlerts = annotateAlerts(alerts, tracts, facilities);
   const signals = [];
 
@@ -132,7 +132,18 @@ function render() {
   signals.sort((a, b) => tierRank(b.tier) - tierRank(a.tier) || b.score - a.score);
 
   if (!signals.length) {
-    el().innerHTML = `<p class="muted">No priority actions right now. Monitoring continues.</p>`;
+    // Distinguish "we checked and it's clear" from "we haven't checked
+    // yet" — the initial pub/sub state is empty arrays before the first
+    // fetch resolves, so without this, a page freshly loading (or an EOC
+    // reconnecting after a dropped connection) briefly shows the exact
+    // same all-clear text as a genuine confirmed-quiet event. A responder
+    // glancing at that during the few-second load window could read it as
+    // reassurance rather than "still checking" (found during a usability
+    // pass on a cold load).
+    el().innerHTML =
+      connection === 'connecting'
+        ? `<p class="muted">Loading current conditions…</p>`
+        : `<p class="muted">No priority actions right now. Monitoring continues.</p>`;
     return;
   }
 

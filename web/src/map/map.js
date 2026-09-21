@@ -101,8 +101,33 @@ export function initMap() {
   // facility list itself — re-render on either changing.
   subscribe(['facilities', 'alerts'], renderFacilities);
 
-  // Repaint tiles when the viewport changes (rotation, split-screen, DevTools).
-  window.addEventListener('resize', () => map.invalidateSize());
+  // Leaflet caches its container's pixel size (and derives its internal
+  // pixel-origin math from it) at first render. If #map hasn't received
+  // its real layout box yet at that instant, the map can render into a
+  // near-invisible corner while the surrounding topbar/panel are correctly
+  // sized — seen intermittently during a cold, localStorage-cleared reload
+  // in a usability pass, though not pinned down to a single deterministic
+  // trigger (a heavily-restarted dev server was a confound during that
+  // testing session, so this may be rarer in normal use than it appeared).
+  // window.resize alone can't catch it either way, since only the map's
+  // *content* needs to settle in this scenario, not the viewport.
+  //
+  // invalidateSize() alone did not visibly repair it when tested in
+  // isolation — it recomputes the container's pixel size but doesn't
+  // necessarily recover pixel-origin math that was already computed
+  // against an initial 0x0 size. Re-applying the map's own current
+  // center/zoom immediately after forces Leaflet to fully recompute that
+  // origin from scratch against the current size. Cheap and safe to run on
+  // every legitimate resize too (tablet/phone breakpoint changes), since
+  // re-setting the view to its own current value is a no-op when the size
+  // change was small to begin with — a strict improvement over the old
+  // window-resize-only listener regardless of how often the corner case
+  // itself turns out to reproduce.
+  const resizeObserver = new ResizeObserver(() => {
+    map.invalidateSize();
+    map.setView(map.getCenter(), map.getZoom());
+  });
+  resizeObserver.observe(document.getElementById('map'));
 }
 
 // Recenters the map on a newly-selected region's bbox (region selection —
