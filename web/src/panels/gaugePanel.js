@@ -1,7 +1,12 @@
 // Gauge detail panel — the responder's drill-down: current level, trajectory,
 // and freshness for the selected gauge.
-// TODO(Tier 2): flood-stage threshold line + NWS forecast crest ("expected to
-// crest at 18.2 ft in ~6 h") once NWPS metadata/forecast feeds are wired.
+//
+// Forecast crest ("expected to crest at 18.2 ft in ~6 h") is NOT shown here:
+// it lives on separate AHPS forecast-point markers (data/ahps.js) rather
+// than folded into every USGS gauge's popup, because there's no reliable
+// USGS-site-to-NWS-LID crosswalk (see the KNOWN LIMITATION comment in
+// usgs.js) — AHPS_LIDS is a small hand-curated list of real forecast
+// points, disjoint from the broader USGS gauge set this panel drills into.
 
 import { getState, subscribe } from '../state.js';
 

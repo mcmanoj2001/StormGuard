@@ -246,7 +246,7 @@ function renderStorms({ storms }) {
 function renderAlerts({ alerts }) {
   alertLayer.clearLayers();
   for (const a of alerts) {
-    if (!a.geometry) continue; // TODO: resolve UGC zones to polygons
+    if (!a.geometry) continue; // nws.js resolves UGC zones; null here means every zone lookup failed
     L.geoJSON(a.geometry, {
       style: {
         color: SEVERITY_COLORS[a.severity] ?? SEVERITY_COLORS.unknown,
