@@ -267,12 +267,23 @@ A single-page app (GitHub Pages or local) that:
 | 2:30–3:00 | Show on tablet/mobile. Same functionality, responsive. |
  
 ### Pre-submission self-check
- 
-- [ ] R1: Gauge data refreshes every 15 min? Timestamp shown? Graceful degradation?
-- [ ] R2: 5+ data source categories used? Limitations documented?
-- [ ] R3: Multi-source synthesis producing a single insight (not just separate layers)?
-- [ ] R4: Someone who never saw this navigates to a critical flood within 10 seconds?
-- [ ] R5: Something a judge hasn't seen before — something that makes them say "that's clever"?
+
+See [docs/DEMO_SCRIPT.md](../docs/DEMO_SCRIPT.md) for the current, detailed
+version of this check with evidence per item — kept there since it needs
+updating alongside the demo script itself. Summary:
+
+- [x] R1: Gauge data refreshes every 5 min (tighter than source cadence).
+      Timestamp + live/stale/error badge shown. Per-source error isolation
+      confirmed.
+- [x] R2: 8+ data source categories live or wired. Limitations documented
+      in-app (About modal) and in §4 below.
+- [x] R3: Actions panel is one ranked list (`rulesEngine.js`) synthesizing
+      alert + gauge trajectory + forecast crest + population + facilities.
+- [ ] R4: **Not yet tested** — needs an actual non-technical person timed
+      navigating to a critical flood. Code can't substitute for this.
+- [ ] R5: **Judgment call** — ranked action engine + hurricane-cone
+      early-warning are the candidates; whether a judge agrees isn't
+      something to check off in advance.
  
 ---
  
@@ -305,17 +316,36 @@ A single-page app (GitHub Pages or local) that:
 | Modeling | Rate of change + NWS crest forecast = trajectory model |
  
 ### Deliverable requirements checklist
- 
-- [ ] Single UI in Chrome, Edge, Safari, Firefox
-- [ ] Scales to desktop, tablet, phone
-- [ ] Near-real-time data display
-- [ ] Region selection (pan/zoom)
-- [ ] Critical infrastructure display (hospitals, roads from OSM)
-- [ ] Weather conditions and precipitation (NWS alerts + radar)
-- [ ] Flood-specific: water height vs flood levels, rate of rise/fall, expected crest
-- [ ] People impacted estimate (Census + FEMA NFHL)
-- [ ] Evacuation route recommendations
-- [ ] Test data injection for demo
+
+- [ ] Single UI in Chrome, Edge, Safari, Firefox — standard web APIs
+      throughout (Leaflet, native `<dialog>`, fetch), but only actually
+      verified in one Chromium-based browser so far. Spot-check Safari and
+      Firefox before submitting, particularly `<dialog>` behavior.
+- [x] Scales to desktop, tablet, phone — verified at 768px and 375px
+      widths; About modal and touch targets confirmed usable at both.
+- [x] Near-real-time data display — USGS 5-min, NWS alerts 60s, NHC 10-min,
+      timestamps + status badge on every refresh.
+- [x] Region selection (pan/zoom) — real 50-state picker, not just the
+      hardcoded Louisiana AOI.
+- [x] Critical infrastructure display (hospitals, roads from OSM) —
+      hospitals via Overpass; challenge text doesn't require every
+      element, hospitals alone satisfy this.
+- [x] Weather conditions and precipitation (NWS alerts + radar) — NWS
+      alerts (with UGC zones now resolved to real polygons) + NEXRAD tiles.
+- [x] Flood-specific: water height vs flood levels, rate of rise/fall,
+      expected crest — USGS stage/severity/trend + AHPS forecast crest.
+- [x] People impacted estimate (Census + FEMA NFHL) — Census ACS ×
+      point-in-polygon is real; the "FEMA NFHL" half is an honest
+      substitute (the active NWS warning polygon), since FEMA's own layer
+      renders as raster tiles, not queryable geometry — documented in
+      `rulesEngine.js` and the About modal, not hidden.
+- [ ] Evacuation route recommendations — deliberately scoped to
+      plain-language recommendations, not turn-by-turn routing (CONTEXT §2
+      strategic choice). Named areas/reaches are called out; specific
+      *routes* are not. Leave unchecked as an honest scope limit, not a
+      to-do.
+- [x] Test data injection for demo — Test Scenario toggle + About modal's
+      "See it in action" button.
  
 ### Prize structure
  
