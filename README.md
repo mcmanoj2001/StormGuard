@@ -25,6 +25,24 @@ Open http://localhost:5173. Flip **Test scenario** in the top bar to inject a
 canned historical riverine-flood scenario (modeled on the August 2016
 Louisiana flood) for demos when no real event is active.
 
+### Census API key (optional, needed for real population counts)
+
+Tract boundaries and point-in-polygon geometry work with no key at all.
+Only the actual population *counts* in the Population tab need one — Census
+has tightened keyless access, so an unkeyed ACS request now returns an HTML
+"Missing Key" page instead of throttled data.
+
+1. Get a free key: https://api.census.gov/data/key_signup.html
+2. Copy `.env.example` to `web/.env` and set `VITE_CENSUS_API_KEY=<your key>`.
+   `web/.env` is git-ignored — it will never be committed or pushed.
+3. **Restart `npm run dev`** — Vite only reads `.env` at server start, not
+   on hot reload.
+4. If you added the key *after* already running the app once, **clear your
+   browser's localStorage for localhost:5173** (or wait 24h) before
+   checking the Population tab. The population fetch is cached for 24h
+   (`src/cache.js`), so a pre-key "no data" result can otherwise sit in
+   cache and look like the key isn't working even though it is.
+
 ## Structure
 
 ```
