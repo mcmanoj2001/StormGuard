@@ -119,7 +119,11 @@ async function fetchGaugesInBbox(bbox) {
   url.searchParams.set('siteStatus', 'active');
   url.searchParams.set('period', 'PT4H');
 
-  const raw = await fetchJson(url.toString());
+  // USGS's IV service is the slowest feed in the app and degrades under load:
+  // a Louisiana-sized bbox was measured at ~31s while still returning 200,
+  // which the default 15s timeout aborted on every retry — the map never
+  // loaded at all. A long timeout with one retry beats three short aborts.
+  const raw = await fetchJson(url.toString(), { timeoutMs: 60000, retries: 1 });
 
   const bySite = new Map();
   for (const series of raw.value?.timeSeries ?? []) {
@@ -163,14 +167,23 @@ export function getGauges(bbox = DEFAULT_BBOX) {
     // Each tile fetched (and caught) independently — the same bulkhead
     // pattern as everywhere else in this app: one oversized or briefly-
     // unlucky tile shouldn't blank out gauges from the rest of the region.
+    let failures = 0;
+    let lastErr;
     const tileResults = await Promise.all(
       tiles.map((tile) =>
         fetchGaugesInBbox(tile).catch((err) => {
           console.error(`gauge tile fetch failed for bbox ${tile.join(',')}`, err);
+          failures++;
+          lastErr = err;
           return new Map();
         })
       )
     );
+    // If EVERY tile failed this is an outage, not "no gauges here": throw so
+    // cached() serves the last good data (flagged stale) instead of storing
+    // an empty result for the full TTL and showing a blank map under a
+    // "Live" badge — which is exactly what a USGS 503 used to do.
+    if (failures === tiles.length) throw lastErr;
 
     const bySite = new Map();
     for (const tileMap of tileResults) {
