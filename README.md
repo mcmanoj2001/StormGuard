@@ -53,7 +53,7 @@ web/
   src/panels/        gauge detail, action synthesis, population panels
   src/cache.js       TTL cache + stale-on-error fallback (localStorage-backed)
   src/testmode.js    test-data injection toggle
-docs/                architecture notes
+docs/                architecture notes, ALGORITHMS.md (how derived figures are computed), DEMO_SCRIPT.md
 CONTEXT.md           project working document — the single source of truth
 ```
 
