@@ -10,6 +10,7 @@ const state = {
   forecastPoints: [],
   facilities: [],
   selectedGaugeId: null,
+  focus: null, // { id, label } — map click scopes the Actions tab to one event
   lastUpdated: null,
   connection: 'connecting', // connecting | live | stale | error
 };

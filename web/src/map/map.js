@@ -5,7 +5,7 @@
 import L from 'leaflet';
 import { setState, subscribe } from '../state.js';
 import { overlayConfig } from '../data/layers.js';
-import { gaugeInsight } from '../insight.js';
+import { gaugeInsight, alertKey, isFloodRelevant } from '../insight.js';
 import { categoryLabel, categorySeverity } from '../data/ahps.js';
 import { pointInGeometry } from '../geo.js';
 
@@ -59,6 +59,12 @@ const facilityLayer = L.layerGroup();
 
 export function initMap() {
   map = L.map('map', { zoomControl: true }).setView([30.2, -90.9], 8);
+
+  // Big shaded areas (alert polygons, hurricane cone) live in their own pane
+  // BELOW the gauge/marker panes. In a shared pane they were drawn on top of
+  // the gauge dots in insertion order and swallowed every hover and click, so
+  // a gauge inside a warning area could never be reached.
+  map.createPane('zonePane').style.zIndex = 350;
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
@@ -188,6 +194,7 @@ function renderForecastPoints({ forecastPoints }) {
         } — ${categoryLabel(p.forecast.floodCategory)}<br>`
       : '';
     L.marker([p.lat, p.lon], { icon: forecastIcon(color) })
+      .on('click', () => setState({ focus: { id: `fp:${p.lid}`, label: p.name } }))
       .bindTooltip(
         `<strong>${p.name}</strong> (NWS forecast point)<br>` +
           `Now: ${p.stage_ft ?? '—'} ft — ${categoryLabel(p.floodCategory)}<br>` +
@@ -221,7 +228,7 @@ const facilityIcon = (atRisk) =>
 // pretending to be the same thing.
 function renderFacilities({ facilities, alerts }) {
   facilityLayer.clearLayers();
-  const activeAlerts = alerts.filter((a) => ['extreme', 'severe'].includes(a.severity));
+  const activeAlerts = alerts.filter((a) => ['extreme', 'severe'].includes(a.severity) && isFloodRelevant(a));
   for (const f of facilities) {
     if (f.lat == null || f.lon == null) continue;
     const atRisk = activeAlerts.some((a) => pointInGeometry(f.lon, f.lat, a.geometry));
@@ -244,11 +251,13 @@ function renderStorms({ storms }) {
   for (const s of storms) {
     if (s.cone) {
       L.geoJSON(s.cone, {
+        pane: 'zonePane',
+        interactive: false,
         style: { color: '#666', weight: 1, dashArray: '4', fillOpacity: 0.08 },
       }).addTo(stormLayer);
     }
     if (s.track) {
-      L.geoJSON(s.track, { style: { color: '#333', weight: 2 } }).addTo(stormLayer);
+      L.geoJSON(s.track, { pane: 'zonePane', interactive: false, style: { color: '#333', weight: 2 } }).addTo(stormLayer);
     }
     if (s.position) {
       L.circleMarker([s.position.lat, s.position.lon], {
@@ -258,6 +267,7 @@ function renderStorms({ storms }) {
         fillColor: '#fff',
         fillOpacity: 0.9,
       })
+        .on('click', () => setState({ focus: { id: `storm:${s.name}`, label: s.name } }))
         .bindTooltip(
           `${s.name}${s.category != null ? ` — Cat ${s.category}` : ''}` +
             `${s.maxWindsMph != null ? `, ${s.maxWindsMph} mph` : ''}` +
@@ -273,17 +283,15 @@ function renderAlerts({ alerts }) {
   for (const a of alerts) {
     if (!a.geometry) continue; // nws.js resolves UGC zones; null here means every zone lookup failed
     L.geoJSON(a.geometry, {
+      pane: 'zonePane',
       style: {
         color: SEVERITY_COLORS[a.severity] ?? SEVERITY_COLORS.unknown,
         weight: 2,
         fillOpacity: 0.15,
       },
     })
-      .bindTooltip(`<strong>${a.event}</strong><br>${a.headline ?? ''}`, { className: 'insight-tip' })
-      .bindPopup(
-        `<strong>${a.event}</strong><br>${a.headline ?? ''}` +
-          (a.instruction ? `<br><span class="tip-instruction">▶ ${a.instruction}</span>` : '')
-      )
+      .on('click', () => setState({ focus: { id: alertKey(a), label: a.event, headline: a.headline } }))
+      .bindTooltip(`<strong>${a.event}</strong><br>${a.headline ?? ''}<br><em>Click for details →</em>`, { className: 'insight-tip' })
       .addTo(alertLayer);
   }
 }

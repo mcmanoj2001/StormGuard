@@ -65,7 +65,10 @@ async function fetchSlot(layers, slot, aoi) {
 
   const storm = {
     id: `${p.basin ?? 'AL'}${p.stormnum ?? ''}` || slot.name,
-    name: [p.stormtype, p.stormname].filter(Boolean).join(' ') || slot.name,
+    // stormname can already be descriptive ("Hurricane Isaias"), in which case
+    // prefixing stormtype produced "HU Hurricane Isaias". Only add the type
+    // code when the name is a bare one-word name like "Alberto".
+    name: (p.stormname?.includes(' ') ? p.stormname : [p.stormtype, p.stormname].filter(Boolean).join(' ')) || slot.name,
     category: p.ssnum ?? null,
     maxWindsMph: p.maxwind != null ? Math.round(p.maxwind * 1.151) : null,
     movement:

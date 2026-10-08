@@ -104,6 +104,18 @@ async function fetchTractGeometry(stateFips) {
   });
 }
 
+// ACS variables per tract, all from one request (the API allows up to 50):
+//   B01003_001E  total population
+//   B01001 65+   male 020-025E + female 044-049E (age bands 65 and over)
+//   B25044       households with no vehicle: owner 003E + renter 010E — the
+//                evacuation-barrier signal (can't self-evacuate)
+//   B25024_010E  mobile-home housing units — the most flood/wind-vulnerable stock
+const AGE65_VARS = [
+  'B01001_020E', 'B01001_021E', 'B01001_022E', 'B01001_023E', 'B01001_024E', 'B01001_025E',
+  'B01001_044E', 'B01001_045E', 'B01001_046E', 'B01001_047E', 'B01001_048E', 'B01001_049E',
+];
+const ACS_VARS = ['B01003_001E', ...AGE65_VARS, 'B25044_003E', 'B25044_010E', 'B25024_010E'];
+
 // Returns null (not an empty map) when no key is configured, so the caller
 // can distinguish "population genuinely unavailable" from "zero people" —
 // an empty tract population would otherwise silently read as "nobody home".
@@ -112,28 +124,38 @@ async function fetchTractPopulation(stateFips) {
   if (!key) return null;
 
   const url = new URL(ACS_BASE);
-  url.searchParams.set('get', 'B01003_001E');
+  url.searchParams.set('get', ACS_VARS.join(','));
   url.searchParams.set('for', 'tract:*');
   url.searchParams.set('in', `state:${stateFips}`);
   url.searchParams.set('key', key);
 
   const rows = await fetchJson(url.toString());
   const [header, ...data] = rows;
-  const popIdx = header.indexOf('B01003_001E');
-  const stateIdx = header.indexOf('state');
-  const countyIdx = header.indexOf('county');
-  const tractIdx = header.indexOf('tract');
+  const col = (name) => header.indexOf(name);
+  const stateIdx = col('state');
+  const countyIdx = col('county');
+  const tractIdx = col('tract');
+  // ACS uses large negative sentinels (e.g. -666666666) for "not available".
+  const num = (row, name) => {
+    const v = Number(row[col(name)]);
+    return Number.isFinite(v) && v >= 0 ? v : 0;
+  };
 
   const byGeoid = new Map();
   for (const row of data) {
     const geoid = `${row[stateIdx]}${row[countyIdx]}${row[tractIdx]}`;
-    byGeoid.set(geoid, Number(row[popIdx]) || 0);
+    byGeoid.set(geoid, {
+      population: num(row, 'B01003_001E'),
+      age65: AGE65_VARS.reduce((sum, v) => sum + num(row, v), 0),
+      noVehicleHH: num(row, 'B25044_003E') + num(row, 'B25044_010E'),
+      mobileHomes: num(row, 'B25024_010E'),
+    });
   }
   return byGeoid;
 }
 
 export function getPopulation(stateFips = DEFAULT_REGION.fips) {
-  return cached(`population:v2:${isTestMode()}:${stateFips}`, TTL_S, async () => {
+  return cached(`population:v3:${isTestMode()}:${stateFips}`, TTL_S, async () => {
     if (isTestMode()) return loadFixture('population');
 
     // Geometry and population are independent federal sources — one being
@@ -161,7 +183,10 @@ export function getPopulation(stateFips = DEFAULT_REGION.fips) {
         county: countyNames.get(t.countyFips) ?? `County ${t.countyFips}`,
         lat: t.lat,
         lon: t.lon,
-        population: population?.get(t.geoid) ?? null,
+        population: population?.get(t.geoid)?.population ?? null,
+        age65: population?.get(t.geoid)?.age65 ?? null,
+        noVehicleHH: population?.get(t.geoid)?.noVehicleHH ?? null,
+        mobileHomes: population?.get(t.geoid)?.mobileHomes ?? null,
       }));
 
     return {

@@ -21,6 +21,13 @@ const POLL_MS = 60_000;
 // not something a panel renders directly.
 let currentRegion = DEFAULT_REGION;
 
+// Latest-wins: each refresh() takes a ticket, and a refresh that finishes after
+// a newer one has started throws its result away. USGS can take 30s+, and
+// without this a slow live fetch started at page load landed AFTER the user
+// switched to the test scenario (or another state) and silently overwrote it
+// — the checkbox said "test" while the map showed live data.
+let refreshTicket = 0;
+
 initMap();
 initGaugePanel();
 initActionPanel();
@@ -33,6 +40,7 @@ refresh();
 setInterval(refresh, POLL_MS);
 
 async function refresh() {
+  const ticket = ++refreshTicket;
   const badge = document.getElementById('status-badge');
   try {
     // Every source is caught independently: one dead upstream (no active
@@ -75,6 +83,7 @@ async function refresh() {
         return { facilities: [], cache: 'error' };
       }),
     ]);
+    if (ticket !== refreshTicket) return; // superseded by a newer refresh
     const degraded = [gauges, alerts, population, forecast, facilities].some(
       (r) => r.cache === 'stale' || r.cache === 'error'
     );
@@ -114,6 +123,11 @@ function wireTabs() {
     })
   );
 
+  // Clicking an event on the map scopes and opens the Actions tab.
+  subscribe('focus', ({ focus }) => {
+    if (focus) document.querySelector('[data-tab="actions"]').click();
+  });
+
   // Selecting a gauge on the map jumps to the gauge tab.
   subscribe('selectedGaugeId', () => {
     document.querySelector('[data-tab="gauge"]').click();
@@ -122,10 +136,28 @@ function wireTabs() {
 
 function wireTestToggle() {
   const toggle = document.getElementById('test-mode-toggle');
+  const banner = document.getElementById('test-banner');
+  const bannerText = document.getElementById('test-banner-text');
+
+  function sync() {
+    banner.hidden = !toggle.checked;
+    bannerText.textContent = `Test scenario — injected historical data for the Baton Rouge area only; the ${currentRegion.name} region picker is paused.`;
+  }
+
   toggle.addEventListener('change', () => {
     setTestMode(toggle.checked);
-    setState({ testMode: toggle.checked });
+    setState({ testMode: toggle.checked, focus: null });
+    // Back to the whole selected region on the way in and out — the fixtures
+    // only cover Baton Rouge, and without this the map stayed stuck on
+    // whatever the scenario had left it showing.
+    setRegionView(currentRegion.bbox);
+    sync();
     refresh();
+  });
+
+  document.getElementById('test-banner-exit').addEventListener('click', () => {
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
   });
 }
 
@@ -136,6 +168,17 @@ function wireRegionSelect() {
     const region = regionByCode(select.value);
     if (!region) return;
     currentRegion = region;
+    // Picking a region means "show me live data for that region" — the test
+    // scenario ignores the region entirely, so leave it rather than silently
+    // keep showing Baton Rouge fixtures under a different state's name.
+    const toggle = document.getElementById('test-mode-toggle');
+    if (toggle.checked) {
+      toggle.checked = false;
+      setTestMode(false);
+      setState({ testMode: false });
+      document.getElementById('test-banner').hidden = true;
+    }
+    setState({ focus: null });
     setRegionView(region.bbox);
     refresh();
   });

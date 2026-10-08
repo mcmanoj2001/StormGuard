@@ -8,7 +8,7 @@
 // usgs.js) — AHPS_LIDS is a small hand-curated list of real forecast
 // points, disjoint from the broader USGS gauge set this panel drills into.
 
-import { getState, subscribe } from '../state.js';
+import { getState, setState, subscribe } from '../state.js';
 
 const el = () => document.getElementById('tab-gauge');
 
@@ -20,6 +20,12 @@ const TREND_LABELS = {
 };
 
 export function initGaugePanel() {
+  el().addEventListener('click', (e) => {
+    const btn = e.target.closest?.('.show-actions');
+    if (!btn) return;
+    const g = getState().gauges.find((x) => x.id === btn.dataset.id);
+    if (g) setState({ focus: { id: `gauge:${g.id}`, label: g.name } });
+  });
   render();
   subscribe(['selectedGaugeId', 'gauges'], render);
 }
@@ -45,5 +51,10 @@ function render() {
       <dt>Reading time</dt><dd>${g.time ? new Date(g.time).toLocaleString() : '—'}</dd>
       <dt>USGS site</dt><dd>${g.id}</dd>
     </dl>
+    ${
+      ['major', 'moderate'].includes(g.severity)
+        ? `<button type="button" class="show-actions" data-id="${g.id}">Show related actions →</button>`
+        : ''
+    }
   `;
 }

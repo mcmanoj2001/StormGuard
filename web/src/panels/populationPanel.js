@@ -5,6 +5,7 @@
 
 import { getState, subscribe } from '../state.js';
 import { pointInGeometry } from '../geo.js';
+import { isFloodRelevant } from '../insight.js';
 
 const el = () => document.getElementById('tab-population');
 
@@ -15,7 +16,7 @@ export function initPopulationPanel() {
 
 function render() {
   const { alerts, tracts } = getState();
-  const active = alerts.filter((a) => ['extreme', 'severe'].includes(a.severity));
+  const active = alerts.filter((a) => ['extreme', 'severe'].includes(a.severity) && isFloodRelevant(a));
 
   if (!active.length || !tracts.length) {
     el().innerHTML = `<p class="muted">No population currently estimated to be in warned areas.</p>`;

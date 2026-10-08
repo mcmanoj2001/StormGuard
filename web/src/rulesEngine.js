@@ -27,12 +27,13 @@
 // index.html's About modal for the same disclosed limitation.
 
 import { pointInGeometry } from './geo.js';
+import { isFloodRelevant } from './insight.js';
 
 export const EVACUATE = 'evacuate';
 export const PREPARE = 'prepare';
 export const MONITOR = 'monitor';
 
-export const TIER_LABEL = { evacuate: 'Evacuate', prepare: 'Prepare', monitor: 'Monitor' };
+export const TIER_LABEL = { evacuate: 'Respond now', prepare: 'Prepare', monitor: 'Monitor' };
 const TIER_RANK = { evacuate: 3, prepare: 2, monitor: 1 };
 export const TIER_ORDER = [EVACUATE, PREPARE, MONITOR];
 
@@ -54,9 +55,34 @@ const FACILITY_BUMP = 1;
 // point-in-polygon test the Population panel and the infrastructure map
 // layer already use, computed once per render and reused by every signal
 // below rather than recomputed per-card.
+// Impact metrics for a set of tracts. `null` fields (no Census key, or an old
+// cached tract shape) are skipped rather than counted as zero, and reported
+// via `missing` so the UI can say "unavailable" instead of "nobody".
+export function sumTracts(tracts) {
+  const total = (key) => tracts.reduce((sum, t) => sum + (t[key] ?? 0), 0);
+  return {
+    tractCount: tracts.length,
+    population: total('population'),
+    age65: total('age65'),
+    noVehicleHH: total('noVehicleHH'),
+    mobileHomes: total('mobileHomes'),
+    missing: tracts.some((t) => t.population == null),
+  };
+}
+
+// "Full population" context: everyone in the loaded region, so a warned area
+// can be read as a share of the whole ("1.6% of Louisiana"). Returns 0 (=
+// "don't show a share") unless the whole state's tracts are loaded — the test
+// scenario's handful of tracts would otherwise read as "83% of the state".
+export function regionPopulationOf(tracts) {
+  if (tracts.length < 100) return 0;
+  return tracts.reduce((sum, t) => sum + (t.population ?? 0), 0);
+}
+
 export function annotateAlerts(alerts, tracts, facilities) {
+  const regionPopulation = regionPopulationOf(tracts);
   return alerts
-    .filter((a) => ['extreme', 'severe'].includes(a.severity))
+    .filter((a) => ['extreme', 'severe'].includes(a.severity) && isFloodRelevant(a))
     .map((a) => {
       const affectedTracts = tracts.filter(
         (t) => t.lat != null && t.lon != null && pointInGeometry(t.lon, t.lat, a.geometry)
@@ -64,9 +90,18 @@ export function annotateAlerts(alerts, tracts, facilities) {
       const facilitiesAtRisk = facilities.filter(
         (f) => f.lat != null && f.lon != null && pointInGeometry(f.lon, f.lat, a.geometry)
       );
-      const missingPopulation = affectedTracts.some((t) => t.population == null);
-      const population = affectedTracts.reduce((sum, t) => sum + (t.population ?? 0), 0);
-      return { ...a, population, missingPopulation, facilitiesAtRisk };
+      const impact = sumTracts(affectedTracts);
+      return {
+        ...a,
+        population: impact.population,
+        age65: impact.age65,
+        noVehicleHH: impact.noVehicleHH,
+        mobileHomes: impact.mobileHomes,
+        tractCount: impact.tractCount,
+        missingPopulation: impact.missing,
+        regionPopulation,
+        facilitiesAtRisk,
+      };
     });
 }
 
