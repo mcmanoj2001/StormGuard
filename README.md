@@ -1,78 +1,84 @@
 # ⛈ StormGuard
 
-Real-time riverine-flood situational awareness for emergency responders.
-Entry for the **IEEE Response Quest Challenge 2026** — see
-[CONTEXT.md](CONTEXT.md) for the full strategy, rubric analysis, and build order.
+Flood situational awareness for emergency responders. It pulls live federal
+data into one map and answers three questions in seconds: **where is it
+flooding, how bad is it, and what needs a response first?**
 
-A **browser-only** single-page app (Leaflet): every API call goes directly
-from the browser to free federal endpoints — no backend, no database, no
-hosting cost. Deployable to GitHub Pages. It answers three questions in
-under 10 seconds: **Where is flooding? How bad? Getting worse?**
+Entry for the IEEE Response Quest Challenge 2026 (flood scenario).
 
-Hurricane data (NHC forecast track/cone) is used as a *proactive upstream
-signal*: a storm cone over the area of interest triggers inland-preparation
-recommendations days before river gauges move — see the scenario amendment
-in [CONTEXT.md](CONTEXT.md).
+## What it does
 
-## Quick start
+- **Live map** of USGS river gauges colored by severity, with rate of rise or
+  fall, NWS alerts, NWS river-crest forecasts, hurricane track and cone, radar,
+  FEMA flood zones and hospitals.
+- **Ranked actions:** every signal is sorted into **Respond now / Prepare /
+  Monitor**. Each warning shows people in the area, age 65+, homes without a
+  vehicle and hospitals inside it.
+- **Click any event** on the map to see just its actions. Mark actions done;
+  completed ones move to a Completed list.
+- **Test scenario** toggle injects a sample flood-and-hurricane event for
+  demonstrations when no disaster is active.
+- **ⓘ About** lists every data source and its status, and the known limits.
+- Works on desktop, tablet and phone. No login, no backend, no database.
+
+## Run it
 
 ```bash
 npm install
-npm run dev            # Vite dev server on :5173
+npm run dev        # open http://localhost:5173
 ```
 
-Open http://localhost:5173. Flip **Test scenario** in the top bar to inject a
-canned historical riverine-flood scenario (modeled on the August 2016
-Louisiana flood) for demos when no real event is active.
+The first live load can take up to a minute (the USGS service is slow); after
+that data is cached. Population *counts* need a free Census key, everything
+else works without one:
 
-### Census API key (optional, needed for real population counts)
-
-Tract boundaries and point-in-polygon geometry work with no key at all.
-Only the actual population *counts* in the Population tab need one — Census
-has tightened keyless access, so an unkeyed ACS request now returns an HTML
-"Missing Key" page instead of throttled data.
-
-1. Get a free key: https://api.census.gov/data/key_signup.html
+1. Get a key: https://api.census.gov/data/key_signup.html
 2. Copy `.env.example` to `web/.env` and set `VITE_CENSUS_API_KEY=<your key>`.
-   `web/.env` is git-ignored — it will never be committed or pushed.
-3. **Restart `npm run dev`** — Vite only reads `.env` at server start, not
-   on hot reload.
-4. If you added the key *after* already running the app once, **clear your
-   browser's localStorage for localhost:5173** (or wait 24h) before
-   checking the Population tab. The population fetch is cached for 24h
-   (`src/cache.js`), so a pre-key "no data" result can otherwise sit in
-   cache and look like the key isn't working even though it is.
+3. Restart `npm run dev`. If the app already ran once without a key, clear
+   localStorage for localhost:5173 (population is cached for 24 hours).
 
-## Structure
+## Data sources and how to access them
+
+All free, public, and called directly from the browser.
+
+| Source | Endpoint | Refresh |
+|---|---|---|
+| USGS stream gauges | `waterservices.usgs.gov/nwis/iv/` | 5 min |
+| NWS alerts and zone boundaries | `api.weather.gov/alerts/active`, `/zones` | 60 s |
+| NWS river forecasts (13 curated points) | `api.water.noaa.gov/nwps/v1/gauges/{id}` | 6 h |
+| NHC hurricane track and cone | `mapservices.weather.noaa.gov/tropical/rest/services/tropical/NHC_tropical_weather/MapServer` | 10 min |
+| NEXRAD radar tiles | `mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/` | live |
+| FEMA flood zones (layer 28) | `hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer` | tiles |
+| Census population (ACS 5-year) | `api.census.gov/data/2022/acs/acs5` | 24 h |
+| Census tract and state boundaries | `tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb` | 24 h |
+| OpenStreetMap hospitals | `overpass-api.de/api/interpreter` | 24 h |
+
+If a source fails, the last good data is shown and flagged "Data delayed";
+sources fail independently.
+
+## Known limits
+
+- No evacuation orders: no federal feed carries them. "Respond now" means the
+  highest-priority warning, not an evacuation order.
+- Population figures count whole census tracts whose center is inside a
+  warning, so they are upper-bound estimates.
+- Gauge severity uses fixed stage thresholds, not each gauge's official flood
+  stage, so some high-datum gauges (such as reservoirs) can read "major".
+- Radar only: no satellite imagery. No real-time power or cell outage data (no
+  federal API exists).
+- LiDAR river-stage sensors exist but no public national feed does.
+
+## More detail
+
+- [docs/ALGORITHMS.md](docs/ALGORITHMS.md): how every derived number is computed
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): design decisions
+- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): demo walkthrough
+- [CONTEXT.md](CONTEXT.md): strategy and rubric notes
 
 ```
-web/
-  public/testdata/   injectable demo scenario fixtures (Phase 3 requirement)
-  src/data/          one module per federal source, fetch → normalize in-browser
-  src/map/           map bootstrap + severity-colored data layers
-  src/panels/        gauge detail, action synthesis, population panels
-  src/cache.js       TTL cache + stale-on-error fallback (localStorage-backed)
-  src/testmode.js    test-data injection toggle
-docs/                architecture notes, ALGORITHMS.md (how derived figures are computed), DEMO_SCRIPT.md
-CONTEXT.md           project working document — the single source of truth
+web/src/data/      one module per source (fetch, normalize, cache)
+web/src/map/       map and layers
+web/src/panels/    actions, gauge, population, about
+web/src/rulesEngine.js   Respond now / Prepare / Monitor ranking
+web/public/testdata/     test-scenario fixtures
 ```
-
-## Data sources (all free, browser-direct, CORS-enabled)
-
-| Source | Module | Refresh | Status |
-|---|---|---|---|
-| USGS Instantaneous Values (stream gauges + trajectory) | `src/data/usgs.js` | 5 min cache | ✅ live |
-| NWS Active Alerts | `src/data/nws.js` | 60 s cache | ✅ live |
-| NHC forecast track/cone (proactive inland-flood signal) | `src/data/nhc.js` | 10 min cache | ✅ live (empty when no active storm) |
-| NEXRAD precipitation radar (tiles) | `src/data/layers.js` | live tiles | ✅ live (Mesonet mirror) |
-| FEMA NFHL flood zones (ArcGIS REST export — WMS isn't enabled on this service) | `src/data/layers.js` | live tiles | ✅ live (layer 28, verified) |
-| NWS AHPS/NWPS forecast crest + flood stages | `src/data/ahps.js` | 6 h | ✅ live (13 curated forecast points; real per-site flood categories) |
-| Census ACS 5-yr population + TIGERweb tract geometry | `src/data/census.js` | 24 h | ✅ live geometry/point-in-polygon; population counts need `VITE_CENSUS_API_KEY` |
-| OpenStreetMap hospitals (Overpass API) | `src/data/infrastructure.js` | 24 h | ✅ live; "at risk" = inside an active NWS warning polygon |
-
-**Known data gap (documented deliberately, per rubric R2):** there is no
-official federal real-time power-outage API; PowerOutage.us is the best
-available substitute. Cell/radio outage data is similarly unavailable — we
-show static FCC tower locations as infrastructure-at-risk instead.
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design decisions.
